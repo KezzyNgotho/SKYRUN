@@ -13,9 +13,9 @@ if ((window as any).StacksProvider && !(window as any).StacksProviderConflictHan
 // Stacks contracts from deployments/Testnet.toml
 const STACKS_DEPLOYER = 'ST18YM565C2RG5W8DFDT5W577YMG5QSAKVRG0MGV1';
 const STACKS_CONTRACTS = {
-  GameTokenV2: `${STACKS_DEPLOYER}.GameTokenV2`,
-  QuestRewardsV2: `${STACKS_DEPLOYER}.QuestRewardsV2`,
-  PlayerProfileV2: `${STACKS_DEPLOYER}.PlayerProfileV2`,
+  GameTokenR: `${STACKS_DEPLOYER}.GameTokenR`,
+  QuestReward: `${STACKS_DEPLOYER}.QuestReward`,
+  PlayerProf: `${STACKS_DEPLOYER}.PlayerProf`,
 };
 
 // Types imported from ../types/wallet

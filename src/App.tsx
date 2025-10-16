@@ -33,9 +33,9 @@ const WalletBridge: React.FC = () => {
       
       try {
         const score = fnArgs[0]?.value || fnArgs[0] || 0;
-        const contractId = wallet.getContractId('QuestRewardsV2');
+        const contractId = wallet.getContractId('QuestReward');
         if (!contractId) {
-          throw new Error('QuestRewardsV2 contract not found');
+          throw new Error('QuestReward contract not found');
         }
         
         const result = await wallet.callContract(contractId, 'submit-game-score', [score]);
@@ -55,9 +55,9 @@ const WalletBridge: React.FC = () => {
       
       try {
         const questId = fnArgs[0]?.value || fnArgs[0] || 1;
-        const contractId = wallet.getContractId('QuestRewardsV2');
+        const contractId = wallet.getContractId('QuestReward');
         if (!contractId) {
-          throw new Error('QuestRewardsV2 contract not found');
+          throw new Error('QuestReward contract not found');
         }
         
         const result = await wallet.callContract(contractId, 'claim-quest-reward', [questId]);
@@ -76,9 +76,9 @@ const WalletBridge: React.FC = () => {
       }
       
       try {
-        const contractId = wallet.getContractId('QuestRewardsV2');
+        const contractId = wallet.getContractId('QuestReward');
         if (!contractId) {
-          throw new Error('QuestRewardsV2 contract not found');
+          throw new Error('QuestReward contract not found');
         }
         
         const result = await wallet.callContract(contractId, 'buy-lifeline', []);
@@ -119,11 +119,12 @@ const WalletBridge: React.FC = () => {
           throw new Error('Wallet not connected');
         }
         
-        const contractId = wallet.getContractId('QuestRewardsV2');
+        const contractId = wallet.getContractId('QuestReward');
         if (!contractId) {
-          throw new Error('QuestRewardsV2 contract not found');
+          throw new Error('QuestReward contract not found');
         }
         
+        console.log('🎮 Submitting game score:', score);
         return await wallet.callContract(contractId, 'submit-game-score', [score]);
       },
       claimQuestReward: async (questId: number) => {
@@ -131,11 +132,12 @@ const WalletBridge: React.FC = () => {
           throw new Error('Wallet not connected');
         }
         
-        const contractId = wallet.getContractId('QuestRewardsV2');
+        const contractId = wallet.getContractId('QuestReward');
         if (!contractId) {
-          throw new Error('QuestRewardsV2 contract not found');
+          throw new Error('QuestReward contract not found');
         }
         
+        console.log('🏆 Claiming quest reward:', questId);
         return await wallet.callContract(contractId, 'claim-quest-reward', [questId]);
       },
       buyLifeLine: async () => {
@@ -143,11 +145,12 @@ const WalletBridge: React.FC = () => {
           throw new Error('Wallet not connected');
         }
         
-        const contractId = wallet.getContractId('QuestRewardsV2');
+        const contractId = wallet.getContractId('QuestReward');
         if (!contractId) {
-          throw new Error('QuestRewardsV2 contract not found');
+          throw new Error('QuestReward contract not found');
         }
         
+        console.log('💾 Buying lifeline...');
         return await wallet.callContract(contractId, 'buy-lifeline', []);
       },
       getWalletStatus: () => {
@@ -279,39 +282,74 @@ const WalletBridge: React.FC = () => {
       console.log('🔍 === END DEBUG ===');
     };
     
-    // Expose contract testing function
-    window.testContractIntegration = async () => {
-      console.log('🧪 Testing contract integration...');
-      
-      if (!wallet.isConnected) {
-        console.error('❌ Wallet not connected for contract test');
-        alert('Please connect your wallet first!');
-        return;
-      }
-      
-      try {
-        console.log('📋 Available contracts:', {
-          GameTokenV2: wallet.getContractId('GameTokenV2'),
-          QuestRewardsV2: wallet.getContractId('QuestRewardsV2'),
-          PlayerProfileV2: wallet.getContractId('PlayerProfileV2')
-        });
-        
-        // Test a simple contract call (if available)
-        const contractId = wallet.getContractId('QuestRewardsV2');
-        if (contractId) {
-          console.log('✅ QuestRewardsV2 contract found:', contractId);
-          console.log('🎮 Ready for game actions:');
-          console.log('  - Submit score: window.callStacksFinalize([score])');
-          console.log('  - Claim reward: window.callStacksClaim([questId])');
-          console.log('  - Buy life: window.callStacksBuyLife([])');
-        } else {
-          console.error('❌ QuestRewardsV2 contract not found');
-        }
-        
-      } catch (error) {
-        console.error('❌ Contract test failed:', error);
-      }
-    };
+        // Expose contract testing function
+        window.testContractIntegration = async () => {
+          console.log('🧪 Testing contract integration...');
+
+          if (!wallet.isConnected) {
+            console.error('❌ Wallet not connected for contract test');
+            alert('Please connect your wallet first!');
+            return;
+          }
+
+          try {
+            console.log('📋 Available contracts:', {
+              GameTokenR: wallet.getContractId('GameTokenR'),
+              QuestReward: wallet.getContractId('QuestReward'),
+              PlayerProf: wallet.getContractId('PlayerProf')
+            });
+
+            // Test a simple contract call (if available)
+            const contractId = wallet.getContractId('QuestReward');
+            if (contractId) {
+              console.log('✅ QuestReward contract found:', contractId);
+              console.log('🎮 Ready for game actions:');
+              console.log('  - Submit score: window.callStacksFinalize([score])');
+              console.log('  - Claim reward: window.callStacksClaim([questId])');
+              console.log('  - Buy life: window.callStacksBuyLife([])');
+
+              // Test submit score with a small score
+              try {
+                console.log('🧪 Testing submit-game-score...');
+                const result = await wallet.callContract(contractId, 'submit-game-score', [100]);
+                console.log('✅ Submit score test successful:', result);
+              } catch (error) {
+                console.error('❌ Submit score test failed:', error);
+              }
+            } else {
+              console.error('❌ QuestReward contract not found');
+            }
+
+          } catch (error) {
+            console.error('❌ Contract test failed:', error);
+          }
+        };
+
+        // Expose contract initialization function
+        window.initializeContractIntegration = async () => {
+          console.log('🔧 Initializing contract integration...');
+
+          if (!wallet.isConnected) {
+            console.error('❌ Wallet not connected for initialization');
+            alert('Please connect your wallet first!');
+            return;
+          }
+
+          try {
+            const contractId = wallet.getContractId('QuestReward');
+            if (contractId) {
+              console.log('🔧 Initializing QuestReward contract with GameToken integration...');
+              const result = await wallet.callContract(contractId, 'initialize-with-game-token', []);
+              console.log('✅ Contract initialization successful:', result);
+              alert('Contract integration initialized successfully!');
+            } else {
+              console.error('❌ QuestReward contract not found');
+            }
+          } catch (error) {
+            console.error('❌ Contract initialization failed:', error);
+            alert('Contract initialization failed. Check console for details.');
+          }
+        };
 
   }, [wallet]);
 
@@ -424,13 +462,13 @@ function App() {
               </div>
             </div>
           )}
-        </div>
+      </div>
         
         {/* Debug Panel */}
         <div className="debugPanel">
           <button onClick={() => console.log('Debug info', window.wallet)}>
             Debug Logs
-          </button>
+        </button>
         </div>
       </div>
     </WalletProvider>

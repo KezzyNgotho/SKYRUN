@@ -157,6 +157,20 @@
   )
 )
 
+;; Buy lifeline (extra life in game)
+(define-public (buy-lifeline)
+  (let (
+    (user tx-sender)
+    (lifeline-cost u10) ;; Cost 10 tokens for a lifeline
+  )
+    (begin
+      ;; For now, just return success - in a real implementation,
+      ;; you would check user's token balance and deduct the cost
+      (ok true)
+    )
+  )
+)
+
 ;; Internal Functions
 
 ;; Check and complete quests based on score (simplified)
@@ -205,12 +219,23 @@
   (+ (/ total-score u1000) u1)
 )
 
-;; Mint tokens for score/reward (simplified)
+;; Mint tokens for score/reward using GameToken contract
 (define-private (mint-tokens-for-score (user principal) (amount uint))
-  ;; Fixed: Return a response with specific error type
-  (if (> amount u0)
-    (ok true)
-    (err ERR-TOKEN-MINT-FAILED)
+  (let (
+    (token-contract (var-get game-token-contract))
+  )
+    (if (is-some token-contract)
+      (begin
+        ;; Call GameToken contract to mint tokens
+        (try! (contract-call? (unwrap-panic token-contract) mint-tokens user amount))
+        (ok true)
+      )
+      ;; If no token contract set, just return success (for testing)
+      (if (> amount u0)
+        (ok true)
+        (err ERR-TOKEN-MINT-FAILED)
+      )
+    )
   )
 )
 
@@ -236,13 +261,42 @@
   (ok (var-get quest-counter))
 )
 
-;; Admin Functions
-
-;; Set game token contract
+;; Initialize default quests (admin only)
+(define-public (initialize-default-quests)
+  (begin
+    (asserts! (is-eq tx-sender CONTRACT-OWNER) ERR-NOT-AUTHORIZED)
+    
+    ;; Create first quest: Score 100 points
+    (unwrap-panic (create-quest 
+      "First Score" 
+      "Score your first 100 points in the game" 
+      QUEST-TYPE-GAME-SCORE 
+      u50 ;; Reward 50 tokens
+      u100 ;; Target score 100
+    ))
+    
+    (ok true)
+  )
+)
 (define-public (set-game-token-contract (contract principal))
   (begin
     (asserts! (is-eq tx-sender CONTRACT-OWNER) ERR-NOT-AUTHORIZED)
     (var-set game-token-contract (some contract))
+    (ok true)
+  )
+)
+
+;; Initialize with GameToken contract (admin only)
+(define-public (initialize-with-game-token)
+  (begin
+    (asserts! (is-eq tx-sender CONTRACT-OWNER) ERR-NOT-AUTHORIZED)
+    
+    ;; Set the GameTokenR contract address
+    (var-set game-token-contract (some 'ST18YM565C2RG5W8DFDT5W577YMG5QSAKVRG0MGV1.GameTokenR))
+    
+    ;; Initialize default quests
+    (unwrap-panic (initialize-default-quests))
+    
     (ok true)
   )
 )

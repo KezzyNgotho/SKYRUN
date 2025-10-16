@@ -19,6 +19,7 @@ declare global {
     showWalletStatus: () => any;
     debugWalletDetection: () => void;
     testContractIntegration: () => Promise<void>;
+    initializeContractIntegration: () => Promise<void>;
     checkWalletConnection: () => boolean;
   }
 }

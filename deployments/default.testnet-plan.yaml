@@ -9,9 +9,51 @@ plan:
     - id: 0
       transactions:
         - contract-publish:
-            contract-name: SavingsVault
+            contract-name: GameTokenR
             expected-sender: ST18YM565C2RG5W8DFDT5W577YMG5QSAKVRG0MGV1
-            cost: 1419104
+            cost: 20905011
+            path: contracts/GameToken.clar
+            anchor-block-only: true
+            clarity-version: 1
+        - contract-publish:
+            contract-name: NFTBadgeR
+            expected-sender: ST18YM565C2RG5W8DFDT5W577YMG5QSAKVRG0MGV1
+            cost: 20987848
+            path: contracts/NFTBadge.clar
+            anchor-block-only: true
+            clarity-version: 1
+        - contract-publish:
+            contract-name: PlayerProfileR
+            expected-sender: ST18YM565C2RG5W8DFDT5W577YMG5QSAKVRG0MGV1
+            cost: 20950195
+            path: contracts/PlayerProfile.clar
+            anchor-block-only: true
+            clarity-version: 1
+        - contract-publish:
+            contract-name: QuestManagerR
+            expected-sender: ST18YM565C2RG5W8DFDT5W577YMG5QSAKVRG0MGV1
+            cost: 20976552
+            path: contracts/QuestManager.clar
+            anchor-block-only: true
+            clarity-version: 1
+        - contract-publish:
+            contract-name: QuestRewardsR
+            expected-sender: ST18YM565C2RG5W8DFDT5W577YMG5QSAKVRG0MGV1
+            cost: 20976552
+            path: contracts/QuestRewards.clar
+            anchor-block-only: true
+            clarity-version: 1
+        - contract-publish:
+            contract-name: RewardTokenR
+            expected-sender: ST18YM565C2RG5W8DFDT5W577YMG5QSAKVRG0MGV1
+            cost: 20942664
+            path: contracts/RewardToken.clar
+            anchor-block-only: true
+            clarity-version: 1
+        - contract-publish:
+            contract-name: SavingsVaultR
+            expected-sender: ST18YM565C2RG5W8DFDT5W577YMG5QSAKVRG0MGV1
+            cost: 21029266
             path: contracts/SavingsVault.clar
             anchor-block-only: true
             clarity-version: 1

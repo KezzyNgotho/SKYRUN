@@ -39,7 +39,17 @@ window.addEventListener('DOMContentLoaded', function() {
     // Try to call React wallet function
     if (window.reactWalletFunctions && window.reactWalletFunctions.submitGameScore) {
       try {
-        const score = fnArgs[0]?.value || fnArgs[0] || 0;
+        // Extract score from Clarity value or use current game score
+        let score = 0;
+        if (fnArgs && fnArgs.length > 0) {
+          score = fnArgs[0]?.value || fnArgs[0] || 0;
+        }
+        // Fallback to current game score if available
+        if (score === 0 && typeof window.score !== 'undefined') {
+          score = window.score || 0;
+        }
+        
+        console.log('🎮 Submitting score to blockchain:', score);
         const result = await window.reactWalletFunctions.submitGameScore(score);
         console.log('Score submitted successfully:', result);
         return result;
@@ -68,7 +78,13 @@ window.addEventListener('DOMContentLoaded', function() {
     // Try to call React wallet function
     if (window.reactWalletFunctions && window.reactWalletFunctions.claimQuestReward) {
       try {
-        const questId = fnArgs[0]?.value || fnArgs[0] || 1;
+        // Extract quest ID from Clarity value
+        let questId = 1; // Default quest
+        if (fnArgs && fnArgs.length > 0) {
+          questId = fnArgs[0]?.value || fnArgs[0] || 1;
+        }
+        
+        console.log('🏆 Claiming quest reward:', questId);
         const result = await window.reactWalletFunctions.claimQuestReward(questId);
         console.log('Reward claimed successfully:', result);
         return result;

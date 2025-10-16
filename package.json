@@ -1,13 +1,50 @@
 {
   "name": "coinquest",
-  "private": true,
-  "version": "0.0.0",
+  "description": "A revolutionary blockchain-powered arcade game built on Stacks",
+  "version": "1.0.0",
   "type": "module",
+  "keywords": [
+    "blockchain",
+    "stacks",
+    "game",
+    "arcade",
+    "web3",
+    "react",
+    "typescript",
+    "smart-contracts"
+  ],
+  "author": {
+    "name": "CoinQuest Team",
+    "email": "team@coinquest.com",
+    "url": "https://coinquest.com"
+  },
+  "license": "MIT",
+  "homepage": "https://coinquest.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/KezzyNgotho/coinQuest.git"
+  },
+  "bugs": {
+    "url": "https://github.com/KezzyNgotho/coinQuest/issues"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "preview": "vite preview",
+    "test": "vitest",
+    "test:coverage": "vitest --coverage",
+    "test:e2e": "playwright test",
+    "type-check": "tsc --noEmit",
+    "contracts:deploy:testnet": "clarinet deployments apply -p deployments/Testnet.toml",
+    "contracts:deploy:mainnet": "clarinet deployments apply -p deployments/Mainnet.toml",
+    "contracts:test": "clarinet test",
+    "contracts:check": "clarinet check",
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs"
   },
   "dependencies": {
     "@stacks/auth": "^7.2.0",

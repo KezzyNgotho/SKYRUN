@@ -12,9 +12,9 @@ export const useWalletConnect = () => {
       throw new Error('Wallet not connected');
     }
 
-    const contractId = wallet.getContractId('QuestRewardsV2');
+    const contractId = wallet.getContractId('QuestReward');
     if (!contractId) {
-      throw new Error('QuestRewardsV2 contract not found');
+      throw new Error('QuestReward contract not found');
     }
 
     return await wallet.callContract(contractId, 'submit-game-score', [score]);
@@ -25,9 +25,9 @@ export const useWalletConnect = () => {
       throw new Error('Wallet not connected');
     }
 
-    const contractId = wallet.getContractId('QuestRewardsV2');
+    const contractId = wallet.getContractId('QuestReward');
     if (!contractId) {
-      throw new Error('QuestRewardsV2 contract not found');
+      throw new Error('QuestReward contract not found');
     }
 
     return await wallet.callContract(contractId, 'claim-quest-reward', [questId]);
@@ -38,9 +38,9 @@ export const useWalletConnect = () => {
       throw new Error('Wallet not connected');
     }
 
-    const contractId = wallet.getContractId('QuestRewardsV2');
+    const contractId = wallet.getContractId('QuestReward');
     if (!contractId) {
-      throw new Error('QuestRewardsV2 contract not found');
+      throw new Error('QuestReward contract not found');
     }
 
     return await wallet.callContract(contractId, 'buy-lifeline', []);
@@ -67,10 +67,10 @@ export const useWalletConnect = () => {
     getShortAddress,
     formatBalance,
     // Contract IDs
-    contracts: {
-      GameTokenV2: wallet.getContractId('GameTokenV2'),
-      QuestRewardsV2: wallet.getContractId('QuestRewardsV2'),
-      PlayerProfileV2: wallet.getContractId('PlayerProfileV2'),
-    }
+        contracts: {
+          GameTokenR: wallet.getContractId('GameTokenR'),
+          QuestReward: wallet.getContractId('QuestReward'),
+          PlayerProf: wallet.getContractId('PlayerProf'),
+        }
   };
 };
