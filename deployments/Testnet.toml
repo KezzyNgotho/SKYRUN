@@ -1,0 +1,17 @@
+[[deployments]]
+name = "testnet"
+network = "testnet"
+deployer = "ST18YM565C2RG5W8DFDT5W577YMG5QSAKVRG0MGV1"
+deployer_private_key = "7a8d04854344e115b4d2e48e8b5ceb5d494e6cea71b325d2e13f186b9e8097a401"
+
+[[deployments.contracts]]
+name = "GameTokenV2"
+path = "contracts/GameToken.clar"
+
+[[deployments.contracts]]
+name = "QuestRewardsV2"
+path = "contracts/QuestRewards.clar"
+
+[[deployments.contracts]]
+name = "PlayerProfileV2"
+path = "contracts/PlayerProfile.clar"

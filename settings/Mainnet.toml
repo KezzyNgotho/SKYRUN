@@ -1,0 +1,8 @@
+[network]
+name = "mainnet"
+stacks_node_rpc_address = "https://stacks-node-api.mainnet.stacks.co"
+stacks_node_p2p_address = "https://stacks-node-api.mainnet.stacks.co"
+stacks_node_event_source_address = "https://stacks-node-api.mainnet.stacks.co"
+stacks_tip_time = 0
+stacks_tip_height = 0
+stacks_tip_hash = ""

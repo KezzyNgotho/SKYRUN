@@ -1,0 +1,12 @@
+[network]
+name = "testnet"
+stacks_node_rpc_address = "https://stacks-node-api.testnet.stacks.co"
+stacks_node_p2p_address = "https://stacks-node-api.testnet.stacks.co"
+stacks_node_event_source_address = "https://stacks-node-api.testnet.stacks.co"
+stacks_tip_time = 0
+stacks_tip_height = 0
+stacks_tip_hash = ""
+
+[accounts.deployer]
+mnemonic = "ancient require spy deny room basket road shift sad test park pipe junior soccer auction cube liberty reward image lunch blanket trumpet inform typical"
+balance = 1000000000000

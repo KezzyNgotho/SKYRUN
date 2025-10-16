@@ -1,0 +1,12 @@
+[network]
+name = "devnet"
+stacks_node_rpc_address = "http://localhost:20443"
+stacks_node_p2p_address = "http://localhost:20444"
+stacks_node_event_source_address = "http://localhost:20443"
+stacks_tip_time = 0
+stacks_tip_height = 0
+stacks_tip_hash = ""
+
+[accounts.deployer]
+mnemonic = "elite dream march one cake trend wood hidden federal journey bacon elephant noise crack amateur giant alpha panda crystal track traffic involve real scan"
+balance = 1000000000000
