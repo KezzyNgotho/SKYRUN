@@ -106,6 +106,7 @@ html {
   cursor: pointer;
   transition: all 0.3s ease;
   backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 .menuButton:hover {
@@ -135,6 +136,7 @@ html {
   cursor: pointer;
   transition: all 0.3s ease;
   backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   min-width: 200px;
   justify-content: center;
 }

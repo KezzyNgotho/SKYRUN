@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { WalletProvider, useWallet } from './contexts/WalletContext';
-import { WalletButton } from './components/WalletButton';
 import { WalletStatus } from './components/WalletStatus';
 import { SubmitScoreButton, ClaimRewardButton, BuyLifeButton } from './components/ContractCallButton';
 import './App.css';
@@ -9,15 +8,12 @@ import './App.css';
 const WalletBridge: React.FC = () => {
   const wallet = useWallet();
   
-  // Add safety check
-  if (!wallet) {
-    console.warn('Wallet context not available yet');
-    return null;
-  }
-
   useEffect(() => {
-    // Only set up global functions if wallet is available
-    if (!wallet) return;
+    // Add safety check inside useEffect
+    if (!wallet) {
+      console.warn('Wallet context not available yet');
+      return;
+    }
 
     // Expose connectWallet function globally for HTML onclick
     window.connectWallet = async () => {
@@ -73,7 +69,7 @@ const WalletBridge: React.FC = () => {
       }
     };
 
-    window.callStacksBuyLife = async function(fnArgs: any[]) {
+    window.callStacksBuyLife = async function() {
       if (!wallet.isConnected) {
         console.warn('Wallet not connected for buyLifeLine');
         return;
@@ -171,7 +167,7 @@ const WalletBridge: React.FC = () => {
       if (wallet.isConnected && wallet.address) {
         // Hide the original connect button
         if (connectButton) {
-          connectButton.style.display = 'none';
+          (connectButton as HTMLElement).style.display = 'none';
         }
         
         // Show wallet info
@@ -191,7 +187,7 @@ const WalletBridge: React.FC = () => {
       } else {
         // Show the original connect button
         if (connectButton) {
-          connectButton.style.display = 'flex';
+          (connectButton as HTMLElement).style.display = 'flex';
         }
         
         // Reset wallet area
@@ -209,11 +205,6 @@ const WalletBridge: React.FC = () => {
     
     // Update UI when wallet state changes
     updateWalletUI();
-    
-    // Also update UI whenever wallet state changes
-    const handleWalletStateChange = () => {
-      updateWalletUI();
-    };
     
     // Add global wallet status indicator
     const addGlobalWalletIndicator = () => {
@@ -329,7 +320,6 @@ const WalletBridge: React.FC = () => {
 
 function App() {
   const [gameStarted, setGameStarted] = useState(false);
-  const [currentScore, setCurrentScore] = useState(0);
 
   const handlePlayClick = () => {
     setGameStarted(true);
@@ -407,7 +397,7 @@ function App() {
                 
                 {/* Game UI Overlay */}
                 <div className="gameUI">
-                  <div className="score" id="scoreDisplay">Score: {currentScore}</div>
+                  <div className="score" id="scoreDisplay">Score: 0</div>
                   <div className="coins" id="coinsDisplay">Coins: 0</div>
                   
                   {/* Wallet Status */}
@@ -416,7 +406,7 @@ function App() {
                   {/* Contract Interaction Buttons */}
                   <div className="contractControls">
                     <SubmitScoreButton 
-                      score={currentScore}
+                      score={0}
                       onSuccess={handleScoreSubmit}
                       className="contract-btn"
                     />

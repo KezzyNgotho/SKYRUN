@@ -70,7 +70,7 @@ export const WalletStatus: React.FC<WalletStatusProps> = ({
                 Balance: {formatBalance(stxBalance)} STX
                 <button 
                   className="refresh-button"
-                  onClick={() => refreshBalance()}
+                  onClick={() => refreshBalance(address || '')}
                   title="Refresh balance"
                 >
                   🔄

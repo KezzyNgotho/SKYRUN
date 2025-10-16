@@ -1,4 +1,6 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import type { ReactNode } from 'react';
+import type { WalletContextType } from '../types/wallet';
 
 const USE_TESTNET = true;
 
@@ -16,33 +18,14 @@ const STACKS_CONTRACTS = {
   PlayerProfileV2: `${STACKS_DEPLOYER}.PlayerProfileV2`,
 };
 
-interface WalletState {
-  userSession: any | null;
-  address: string | null;
-  walletAddress: string | null; // Alias for address
-  stxBalance: number | null;
-  isConnected: boolean;
-  isConnecting: boolean;
-  error: string | null;
-}
-
-interface WalletActions {
-  connectWallet: () => Promise<void>;
-  disconnectWallet: () => void;
-  refreshBalance: () => Promise<void>;
-  callContract: (contractId: string, functionName: string, functionArgs: any[]) => Promise<any>;
-  getContractId: (name: string) => string | null;
-}
-
-type WalletContextType = WalletState & WalletActions;
+// Types imported from ../types/wallet
 
 const WalletContext = createContext<WalletContextType | undefined>(undefined);
 
 export const useWallet = () => {
   const context = useContext(WalletContext);
-  if (!context) {
-    console.warn('useWallet called outside of WalletProvider');
-    return null;
+  if (context === undefined) {
+    throw new Error('useWallet must be used within a WalletProvider');
   }
   return context;
 };
@@ -105,8 +88,8 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
   
   const getStacksNetwork = useCallback(async () => {
     try {
-      const { StacksTestnet, StacksMainnet } = await import('@stacks/network');
-      return USE_TESTNET ? new StacksTestnet() : new StacksMainnet();
+      const networkModule = await import('@stacks/network');
+      return USE_TESTNET ? networkModule.STACKS_TESTNET : networkModule.STACKS_MAINNET;
     } catch (error) {
       console.warn('Failed to load Stacks network, using fallback');
       return USE_TESTNET
@@ -217,8 +200,8 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
             });
           });
           
-          if (userSession && userSession.userData) {
-            const address = userSession.userData.profile.stxAddress.testnet;
+          if (userSession && (userSession as any).userData) {
+            const address = (userSession as any).userData.profile.stxAddress.testnet;
             console.log('✅ Stacks Connect address:', address);
             
             setAddress(address);
@@ -409,6 +392,11 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     console.log('🔍 === END DEBUG ===');
   }, []);
 
+  // Expose debug function globally
+  useEffect(() => {
+    (window as any).debugWalletDetection = debugWalletDetection;
+  }, [debugWalletDetection]);
+
   const disconnectWallet = useCallback(() => {
     try {
       if (userSession?.isUserSignedIn?.()) {
@@ -423,51 +411,6 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     setStxBalance(null);
     setError(null);
   }, [userSession]);
-
-  const extractStxAddress = useCallback((response: any) => {
-    try {
-      console.log('🔍 Extracting address from response:', response);
-      
-      // Handle Xverse authenticationRequest response
-      if (response?.address && typeof response.address === 'string') {
-        console.log('✅ Extracted address from Xverse authentication:', response.address);
-        return response.address;
-      }
-
-      // Handle Leather/Hiro response format
-      if (response?.addresses && Array.isArray(response.addresses)) {
-        const validAddress = response.addresses.find((addr: any) => 
-          addr?.address && typeof addr.address === 'string'
-        );
-        return validAddress?.address;
-      }
-
-      // Handle Xverse response format
-      if (Array.isArray(response)) {
-        const first = response[0];
-        if (first?.address && typeof first.address === 'string') {
-          return first.address;
-        }
-        if (typeof first === 'string') {
-          return first;
-        }
-      }
-
-      // Handle direct address response
-      if (response?.address && typeof response.address === 'string') {
-        return response.address;
-      }
-      
-      if (typeof response === 'string') {
-        return response;
-      }
-
-      return null;
-    } catch (error) {
-      console.error('Error extracting address:', error);
-      return null;
-    }
-  }, []);
 
   const callContract = useCallback(async (
     contractId: string, 
@@ -513,7 +456,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
           contractName: contractId.split('.')[1],
           functionName,
           functionArgs,
-          network,
+          network: network as any,
           postConditionMode: 1,
           onFinish: (result) => {
             console.log('✅ Contract call successful:', result);

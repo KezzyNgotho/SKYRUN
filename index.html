@@ -1,7 +1,7 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
-<head>
+  <head>
   <title>coinQuest</title>
   <link rel="stylesheet" href="/style.css">
   <meta name="viewport" content="width = device-width, height = device-height">
@@ -32,7 +32,7 @@
   </script>
 
   <!-- Stacks UMDs are not needed in React build; using npm packages instead -->
-</head>
+  </head>
 
 <body oncontextmenu="return false;">
   <div id="turnLandscape">
@@ -159,11 +159,11 @@
         </div>
         <div class="mainLeftInfo">
           <div class="mainLeftWrapper">
-            <img id='prizeImg' src="/assets/gui/prize.png">
+            <img id='prizeImg' src="/assets/gui/prize.png" alt="Prize icon">
             <div class='HighScoreBlock mainStatText'></div>
           </div>
           <div class="mainLeftWrapper">
-            <img id='coinImg' src="/assets/sprites/collect/coin.png">
+            <img id='coinImg' src="/assets/sprites/collect/coin.png" alt="Coin icon">
             <div class='mainCoinsText mainStatText'></div>
           </div>
         </div>
@@ -478,8 +478,8 @@
   <script src="/scripts/walletBridge.js"></script>
 
   <!-- React bundle -->
-  <div id="root"></div>
-  <script type="module" src="/src/main.tsx"></script>
-</body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 
 </html>

@@ -3,7 +3,6 @@ import { useStacks } from '../contexts/StacksContext';
 
 export const GameCanvas: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const gameRef = useRef<any>(null);
   const [gameLoaded, setGameLoaded] = useState(false);
   const { callContract, getContractId, isConnected } = useStacks();
 
@@ -27,7 +26,7 @@ export const GameCanvas: React.FC = () => {
           ];
 
           let loadedCount = 0;
-          scripts.forEach((src, index) => {
+          scripts.forEach((src) => {
             const script = document.createElement('script');
             script.src = src;
             script.onload = () => {
