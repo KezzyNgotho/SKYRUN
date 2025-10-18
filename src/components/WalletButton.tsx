@@ -62,3 +62,6 @@ export const WalletButton: React.FC = () => {
     </div>
   );
 };
+
+// Add display name for React Fast Refresh
+WalletButton.displayName = 'WalletButton';

@@ -83,6 +83,9 @@ export const ContractCallButton: React.FC<ContractCallButtonProps> = ({
   );
 };
 
+// Add display name for React Fast Refresh
+ContractCallButton.displayName = 'ContractCallButton';
+
 // Convenience components for common contract calls
 export const SubmitScoreButton: React.FC<{
   score: number;
@@ -91,8 +94,8 @@ export const SubmitScoreButton: React.FC<{
   className?: string;
 }> = ({ score, onSuccess, onError, className }) => (
   <ContractCallButton
-    contractName="QuestRewardsV2"
-    functionName="submit-game-score"
+    contractName="CoinQuestGame"
+    functionName="submit_game_score"
     functionArgs={[score]}
     onSuccess={onSuccess}
     onError={onError}
@@ -109,8 +112,8 @@ export const ClaimRewardButton: React.FC<{
   className?: string;
 }> = ({ questId = 1, onSuccess, onError, className }) => (
   <ContractCallButton
-    contractName="QuestRewardsV2"
-    functionName="claim-quest-reward"
+    contractName="CoinQuestGame"
+    functionName="claim_quest_reward"
     functionArgs={[questId]}
     onSuccess={onSuccess}
     onError={onError}
@@ -126,8 +129,8 @@ export const BuyLifeButton: React.FC<{
   className?: string;
 }> = ({ onSuccess, onError, className }) => (
   <ContractCallButton
-    contractName="QuestRewardsV2"
-    functionName="buy-lifeline"
+    contractName="CoinQuestGame"
+    functionName="buy_lifeline"
     functionArgs={[]}
     onSuccess={onSuccess}
     onError={onError}

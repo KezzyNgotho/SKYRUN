@@ -7,9 +7,8 @@ const USE_TESTNET = true;
 // Stacks contracts from deployments/Testnet.toml
 const STACKS_DEPLOYER = 'ST18YM565C2RG5W8DFDT5W577YMG5QSAKVRG0MGV1';
 const STACKS_CONTRACTS = {
-  GameTokenV2: `${STACKS_DEPLOYER}.GameTokenV2`,
-  QuestRewardsV2: `${STACKS_DEPLOYER}.QuestRewardsV2`,
-  PlayerProfileV2: `${STACKS_DEPLOYER}.PlayerProfileV2`,
+  CoinQuestToken: `${STACKS_DEPLOYER}.CoinQuestToken`,
+  CoinQuestGame: `${STACKS_DEPLOYER}.CoinQuestGame`,
 };
 
 interface StacksContextType {

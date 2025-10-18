@@ -3,9 +3,9 @@ declare global {
   interface Window {
     connectWallet: () => Promise<void>;
     disconnectWallet: () => void;
-    callStacksFinalize: (fnArgs: any[]) => Promise<any>;
-    callStacksClaim: (fnArgs: any[]) => Promise<any>;
-    callStacksBuyLife: (fnArgs: any[]) => Promise<any>;
+    callStacksFinalize: () => Promise<any>;
+    callStacksClaim: () => Promise<any>;
+    callStacksBuyLife: () => Promise<any>;
     getWalletStatus: () => { connected: boolean; address: string | null; balance: number | null };
     wallet: any;
     reactWalletFunctions: {
@@ -20,7 +20,30 @@ declare global {
     debugWalletDetection: () => void;
     testContractIntegration: () => Promise<void>;
     initializeContractIntegration: () => Promise<void>;
-    checkWalletConnection: () => boolean;
+    debugWallet: () => void;
+    openWalletSettings: () => void;
+    testContractCall: () => Promise<void>;
+    testContractInitialization: () => Promise<void>;
+    testSimpleContractCall: () => Promise<any>;
+    testExactFormat: () => Promise<any>;
+    testWalletReadiness: () => Promise<void>;
+    simpleContractCall: (contractId: string, functionName: string, functionArgs: any[]) => Promise<any>;
+    // Core game functions for HTML onclick handlers
+    PlayButtonActivate: () => void;
+    buyLifeLine: () => void;
+    claimLastRun: () => void;
+    finalizeGameScore: () => void;
+    Replay: () => void;
+    GoToHome: () => void;
+    PauseToggle: () => void;
+    StacksTransactions: {
+      uintCV: (value: number) => any;
+      stringUtf8CV: (value: string) => any;
+      boolCV: (value: boolean) => any;
+    };
+    // Global variables for avoiding serialization issues
+    currentGameScore: number;
+    currentQuestId: number;
   }
 }
 

@@ -98,7 +98,7 @@ export const GameCanvas: React.FC = () => {
     }
 
     try {
-      const contractId = getContractId('QuestRewardsV2');
+      const contractId = getContractId('CoinQuestGame');
       if (!contractId) {
         console.error('Contract not found');
         return;
@@ -120,7 +120,7 @@ export const GameCanvas: React.FC = () => {
     }
 
     try {
-      const contractId = getContractId('QuestRewardsV2');
+      const contractId = getContractId('CoinQuestGame');
       if (!contractId) {
         console.error('Contract not found');
         return;

@@ -686,20 +686,46 @@ console.log("Stacks mode active; EVM features disabled.");
 
 // Function to finalize game score
 async function finalizeGameScore() {
+  console.log('🎮 === FINALIZE GAME SCORE CALLED ===');
+  console.log('🎮 Current score:', score);
+  console.log('🎮 Available functions:', {
+    callStacksFinalize: typeof window.callStacksFinalize,
+    callStacksClaim: typeof window.callStacksClaim,
+    callStacksBuyLife: typeof window.callStacksBuyLife
+  });
+  
   // Disable the button and change text to "Loading..."
   document.getElementById("endGameButton").disabled = true;
   document.getElementById("endGamebuttonText").innerText = "Loading...";
 
 	try {
-		const stxTx = (window.StacksTransactions || {});
-		const fnArgs = [ stxTx && typeof stxTx.uintCV === 'function' ? stxTx.uintCV(Number(score.toFixed(0))) : undefined ];
+			// Ensure we only pass the most basic, serializable values
+			const scoreValue = parseInt(score.toFixed(0), 10); // Convert to integer
+			console.log('🎮 Submitting score to Stacks:', scoreValue, typeof scoreValue);
+			
+			// Try to avoid serialization issues by using a different approach
 		if (typeof window.callStacksFinalize === 'function') {
-			await window.callStacksFinalize(fnArgs);
-			console.log('Submitted score to Stacks.');
-		}
-	} catch (e) { console.log('Stacks finalize error', e); }
+				console.log('🎮 callStacksFinalize function found, calling...');
+				// Store the score in a global variable to avoid passing it directly
+				window.currentGameScore = scoreValue;
+				
+				// Call the function without parameters to avoid serialization
+				await window.callStacksFinalize();
+				console.log('🎮 Submitted score to Stacks successfully.');
+				
+				// Show success message
+				alert(`🎉 SUCCESS! Score submitted to blockchain!\n\n📊 Your score: ${scoreValue} points\n💰 Tokens earned for your achievement!\n\n🎮 Your progress has been saved on the Stacks blockchain!`);
+			} else {
+				console.warn('🎮 callStacksFinalize function not available');
+				alert('❌ Blockchain function not available. Please refresh the page.');
+			}
+		} catch (e) { 
+			console.log('🎮 Stacks finalize error', e); 
+			alert(`❌ Failed to submit score: ${e.message}`);
+		} finally {
     document.getElementById("endGameButton").disabled = false;
     document.getElementById("endGamebuttonText").innerText = "END GAME";
+		}
   // EVM path removed; using Stacks only
 }
 // Claim last run rewards via MetaMask contract
@@ -709,14 +735,30 @@ async function claimLastRun() {
     const lScore = localStorage.getItem("lastRunScore") || "0";
     
 		try {
-			const stxTx = (window.StacksTransactions || {});
-			const questId = 1; // default quest
-			const fnArgs = [ stxTx && typeof stxTx.uintCV === 'function' ? stxTx.uintCV(questId) : undefined ];
+			// Ensure we only pass the most basic, serializable values
+			const questId = 1; // default quest - simple integer
+			console.log('Claiming quest reward:', questId, typeof questId);
+			
+			// Try to avoid serialization issues by using a different approach
 			if (typeof window.callStacksClaim === 'function') {
-				await window.callStacksClaim(fnArgs);
-				console.log('Claimed via Stacks.');
+				console.log('🎮 callStacksClaim function found, calling...');
+				// Store the quest ID in a global variable to avoid passing it directly
+				window.currentQuestId = questId;
+				
+				// Call the function without parameters to avoid serialization
+				await window.callStacksClaim();
+				console.log('🎮 Claimed via Stacks successfully.');
+				
+				// Show success message
+				alert(`🎉 SUCCESS! Quest reward claimed!\n\n🏆 Quest ID: ${questId}\n💰 Reward tokens added to your balance!\n\n🎮 Your achievement has been recorded on the blockchain!`);
+			} else {
+				console.warn('🎮 callStacksClaim function not available');
+				alert('❌ Blockchain function not available. Please refresh the page.');
 			}
-		} catch(e) { console.log('Stacks claim error', e); }
+		} catch(e) { 
+			console.log('Stacks claim error', e); 
+			throw e; // Re-throw to handle in outer catch
+		}
 		return;
     
     const scoreValue = Number(lScore);
@@ -754,12 +796,17 @@ async function buyLifeLine() {
 	try {
 		// If lifeline maps to a Stacks function, call here; else fallback to in-game coins
 		if (typeof window.callStacksBuyLife === 'function') {
+			console.log('🎮 callStacksBuyLife function found, calling...');
 			await window.callStacksBuyLife([]);
-			console.log('Lifeline purchased on Stacks');
+			console.log('🎮 Lifeline purchased on Stacks successfully.');
+			
+			// Show success message
+			alert(`🎉 SUCCESS! Lifeline purchased!\n\n💊 Extra life added to your game!\n💰 Cost: 10 COINQ tokens\n\n🎮 Your lifeline has been recorded on the blockchain!`);
+			
 			coinSound.play();
 			saveMe();
 		} else {
-			console.log('Using in-game coins for lifeline.');
+			console.log('🎮 Using in-game coins for lifeline.');
 			try { payForLife(); } catch(e) { console.log('payForLife not available'); }
 		}
 	} catch(e) { console.log('Stacks buyLife error', e); }
@@ -1957,3 +2004,18 @@ window.onfocus = function () {
 window.onblur = function () {
   soundOff();
 };
+
+// Expose game functions globally for HTML onclick handlers
+console.log('🎮 === EXPOSING GAME FUNCTIONS GLOBALLY ===');
+console.log('🎮 finalizeGameScore:', typeof finalizeGameScore);
+console.log('🎮 claimLastRun:', typeof claimLastRun);
+console.log('🎮 buyLifeLine:', typeof buyLifeLine);
+
+window.finalizeGameScore = finalizeGameScore;
+window.claimLastRun = claimLastRun;
+window.buyLifeLine = buyLifeLine;
+
+console.log('🎮 === GAME FUNCTIONS EXPOSED ===');
+console.log('🎮 window.finalizeGameScore:', typeof window.finalizeGameScore);
+console.log('🎮 window.claimLastRun:', typeof window.claimLastRun);
+console.log('🎮 window.buyLifeLine:', typeof window.buyLifeLine);

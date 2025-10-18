@@ -4,33 +4,13 @@ description = "A gamified DeFi savings and quest platform built on Stacks blockc
 authors = ["coinQuest Team"]
 license = "MIT"
 
-[contracts.GameToken]
-path = "contracts/GameToken.clar"
+[contracts.CoinQuestToken]
+path = "contracts/CoinQuestToken.clar"
 depends_on = []
 
-[contracts.QuestRewards]
-path = "contracts/QuestRewards.clar"
-depends_on = []
-
-[contracts.PlayerProfile]
-path = "contracts/PlayerProfile.clar"
-depends_on = []
-
-[contracts.RewardToken]
-path = "contracts/RewardToken.clar"
-depends_on = []
-
-[contracts.QuestManager]
-path = "contracts/QuestManager.clar"
-depends_on = []
-
-[contracts.NFTBadge]
-path = "contracts/NFTBadge.clar"
-depends_on = []
-
-[contracts.SavingsVault]
-path = "contracts/SavingsVault.clar"
-depends_on = []
+[contracts.CoinQuestGame]
+path = "contracts/CoinQuestGame.clar"
+depends_on = ["CoinQuestToken"]
 
 [requirements]
 clarinet = ">=3.0.0"

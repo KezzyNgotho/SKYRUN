@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { WalletProvider, useWallet } from './contexts/WalletContext';
-import { WalletStatus } from './components/WalletStatus';
-import { SubmitScoreButton, ClaimRewardButton, BuyLifeButton } from './components/ContractCallButton';
+import CoinQuestGame from './components/CoinQuestGame';
 import './App.css';
 
 // Component to expose wallet functions globally (must be inside WalletProvider)
@@ -24,71 +23,169 @@ const WalletBridge: React.FC = () => {
       }
     };
 
-    // Expose wallet functions globally for game.js compatibility
-    window.callStacksFinalize = async function(fnArgs: any[]) {
-      if (!wallet.isConnected) {
-        console.warn('Wallet not connected for finalizeGameScore');
-        return;
-      }
+    // Add debug function for wallet troubleshooting
+    window.debugWallet = () => {
+      const connectionStatus = wallet.checkWalletConnection();
+      console.log('🔍 === COMPREHENSIVE WALLET DEBUG ===');
+      console.log('🔍 Basic wallet state:', {
+        isConnected: wallet.isConnected,
+        address: wallet.address,
+        stxBalance: wallet.stxBalance,
+        isConnecting: wallet.isConnecting,
+        error: wallet.error
+      });
+      console.log('🔍 Detailed connection status:', connectionStatus);
+      console.log('🔍 Contract IDs:', {
+        CoinQuestToken: wallet.getContractId('CoinQuestToken'),
+        CoinQuestGame: wallet.getContractId('CoinQuestGame')
+      });
+      console.log('🔍 Available functions:', {
+        callStacksBuyLife: typeof window.callStacksBuyLife,
+        callStacksClaim: typeof window.callStacksClaim,
+        callStacksFinalize: typeof window.callStacksFinalize,
+        getWalletStatus: typeof window.getWalletStatus
+      });
+      console.log('🔍 Window wallet objects:', {
+        xverse: !!(window as any).xverse,
+        LeatherProvider: !!(window as any).LeatherProvider,
+        StacksProvider: !!(window as any).StacksProvider
+      });
+      console.log('🔍 User session details:', {
+        hasUserSession: !!wallet.userSession,
+        isUserSignedIn: wallet.userSession?.isUserSignedIn?.(),
+        userData: (wallet.userSession as any)?.userData
+      });
       
-      try {
-        const score = fnArgs[0]?.value || fnArgs[0] || 0;
-        const contractId = wallet.getContractId('QuestReward');
-        if (!contractId) {
-          throw new Error('QuestReward contract not found');
+      // Test contract call readiness
+      console.log('🔍 === CONTRACT CALL READINESS TEST ===');
+      if (wallet.isConnected) {
+        console.log('✅ Wallet appears connected');
+        const contractId = wallet.getContractId('CoinQuestGame');
+        if (contractId) {
+          console.log('✅ CoinQuestGame contract ID found:', contractId);
+        } else {
+          console.log('❌ CoinQuestGame contract ID not found');
         }
-        
-        const result = await wallet.callContract(contractId, 'submit-game-score', [score]);
-        console.log('Score submitted successfully:', result);
-        return result;
-      } catch (error) {
-        console.error('Failed to submit score:', error);
-        throw error;
+      } else {
+        console.log('❌ Wallet not connected');
       }
     };
 
-    window.callStacksClaim = async function(fnArgs: any[]) {
+    // Add a simple test function for debugging
+    window.testContractCall = async function() {
+      console.log('🧪 === TESTING CONTRACT CALL ===');
+      
       if (!wallet.isConnected) {
-        console.warn('Wallet not connected for claimLastRun');
+        console.log('❌ Wallet not connected');
         return;
       }
       
       try {
-        const questId = fnArgs[0]?.value || fnArgs[0] || 1;
-        const contractId = wallet.getContractId('QuestReward');
-        if (!contractId) {
-          throw new Error('QuestReward contract not found');
-        }
+        const contractId = wallet.getContractId('CoinQuestGame');
+        console.log('📋 Contract ID:', contractId);
         
-        const result = await wallet.callContract(contractId, 'claim-quest-reward', [questId]);
-        console.log('Reward claimed successfully:', result);
-        return result;
+        // Test with a very simple function call
+        console.log('🧪 Testing with submit_game_score (score: 100)...');
+        const result = await wallet.callContract(contractId!, 'submit_game_score', [100]);
+        console.log('✅ Test successful:', result);
+        alert('✅ Test transaction successful!');
       } catch (error) {
-        console.error('Failed to claim reward:', error);
-        throw error;
+        console.error('❌ Test failed:', error);
+        alert(`❌ Test failed: ${error instanceof Error ? error.message : String(error)}`);
       }
     };
 
-    window.callStacksBuyLife = async function() {
-      if (!wallet.isConnected) {
-        console.warn('Wallet not connected for buyLifeLine');
-        return;
-      }
+    // Add a simple wallet contract call function
+    window.simpleContractCall = async function(contractId: string, functionName: string, functionArgs: any[]) {
+      console.log('🔍 === SIMPLE CONTRACT CALL ===');
+      console.log('🔍 Contract ID:', contractId);
+      console.log('🔍 Function:', functionName);
+      console.log('🔍 Args:', functionArgs);
       
+      // Try Sats Connect first (proper way)
       try {
-        const contractId = wallet.getContractId('QuestReward');
-        if (!contractId) {
-          throw new Error('QuestReward contract not found');
-        }
+        console.log('🔍 Using Sats Connect for contract call...');
+        const { request } = await import('sats-connect');
         
-        const result = await wallet.callContract(contractId, 'buy-lifeline', []);
-        console.log('Life purchased successfully:', result);
+        console.log('🔍 Contract call parameters:', {
+          contract: contractId,
+          functionName,
+          functionArgs,
+          network: 'testnet'
+        });
+        
+        const result = await request('stx_callContract', {
+          contract: contractId,
+          functionName,
+          functionArgs
+        });
+        
+        console.log('✅ Sats Connect contract call successful:', result);
         return result;
       } catch (error) {
-        console.error('Failed to buy life:', error);
+        console.log('⚠️ Sats Connect contract call failed:', error);
+        // Continue to try other methods
+      }
+      
+      // Try Leather
+      if ((window as any).LeatherProvider?.request) {
+        console.log('🔍 Using Leather direct call...');
+        console.log('🔍 Available Leather methods:', Object.keys((window as any).LeatherProvider));
+        try {
+          const contractAddress = contractId.split('.')[0];
+          const contractName = contractId.split('.')[1];
+          
+          // Try the correct Leather method for contract calls
+          console.log('🔍 Trying Leather contract call method...');
+          const result = await (window as any).LeatherProvider.request({
+            method: 'stx_callContract',
+            params: {
+              contractAddress,
+              contractName,
+              functionName,
+              functionArgs,
+              network: 'testnet'
+            }
+          });
+          
+          console.log('✅ Leather contract call successful:', result);
+          return result;
+        } catch (error) {
+          console.error('❌ Leather contract call failed:', error);
         throw error;
+        }
+      }
+      
+      throw new Error('No compatible wallet found for contract calls');
+    };
+
+    // Add wallet settings function
+    window.openWalletSettings = () => {
+      if (wallet.isConnected) {
+        // Show wallet info modal or redirect to wallet management
+        alert(`Wallet Connected!\nAddress: ${wallet.address}\nBalance: ${wallet.stxBalance?.toFixed(2) || '0.00'} STX`);
+      } else {
+        // Open wallet connection
+        window.connectWallet();
       }
     };
+
+    // Expose Stacks transactions functions globally for game.js compatibility
+    (async () => {
+      try {
+        const { uintCV, stringUtf8CV, boolCV } = await import('@stacks/transactions');
+        window.StacksTransactions = {
+          uintCV,
+          stringUtf8CV,
+          boolCV
+        };
+        console.log('✅ StacksTransactions functions exposed globally');
+      } catch (error) {
+        console.warn('⚠️ Failed to expose StacksTransactions functions:', error);
+      }
+    })();
+
+    // Contract functions are now defined outside React context to avoid serialization issues
 
     // Update wallet status for game.js
     window.getWalletStatus = function() {
@@ -102,70 +199,16 @@ const WalletBridge: React.FC = () => {
     // Expose wallet instance for debugging
     window.wallet = wallet;
     
-    // Expose React wallet functions for the bridge
-    window.reactWalletFunctions = {
-      connectWallet: async () => {
-        try {
-          await wallet.connectWallet();
-          return { success: true };
-        } catch (error) {
-          console.error('Wallet connection failed:', error);
-          return { success: false, error: error instanceof Error ? error.message : String(error) };
-        }
-      },
-      disconnectWallet: wallet.disconnectWallet,
-      submitGameScore: async (score: number) => {
-        if (!wallet.isConnected) {
-          throw new Error('Wallet not connected');
-        }
-        
-        const contractId = wallet.getContractId('QuestReward');
-        if (!contractId) {
-          throw new Error('QuestReward contract not found');
-        }
-        
-        console.log('🎮 Submitting game score:', score);
-        return await wallet.callContract(contractId, 'submit-game-score', [score]);
-      },
-      claimQuestReward: async (questId: number) => {
-        if (!wallet.isConnected) {
-          throw new Error('Wallet not connected');
-        }
-        
-        const contractId = wallet.getContractId('QuestReward');
-        if (!contractId) {
-          throw new Error('QuestReward contract not found');
-        }
-        
-        console.log('🏆 Claiming quest reward:', questId);
-        return await wallet.callContract(contractId, 'claim-quest-reward', [questId]);
-      },
-      buyLifeLine: async () => {
-        if (!wallet.isConnected) {
-          throw new Error('Wallet not connected');
-        }
-        
-        const contractId = wallet.getContractId('QuestReward');
-        if (!contractId) {
-          throw new Error('QuestReward contract not found');
-        }
-        
-        console.log('💾 Buying lifeline...');
-        return await wallet.callContract(contractId, 'buy-lifeline', []);
-      },
-      getWalletStatus: () => {
-        return {
-          connected: wallet.isConnected,
-          address: wallet.address,
-          balance: wallet.stxBalance
-        };
-      }
-    };
+    // React wallet functions removed - using standalone functions instead to avoid serialization issues
     
     // Update UI based on wallet connection state
     const updateWalletUI = () => {
       const connectButton = document.querySelector('.connectButton');
       const walletArea = document.querySelector('#walletArea');
+      
+      // Update settings panel wallet status
+      const walletStatusText = document.getElementById('walletStatusText');
+      const walletStatus = document.getElementById('walletStatus');
       
       if (wallet.isConnected && wallet.address) {
         // Hide the original connect button
@@ -187,6 +230,15 @@ const WalletBridge: React.FC = () => {
             </div>
           `;
         }
+        
+        // Update settings panel wallet status
+        if (walletStatusText) {
+          walletStatusText.textContent = `Connected: ${wallet.address.slice(0, 6)}...${wallet.address.slice(-4)}`;
+        }
+        if (walletStatus) {
+          walletStatus.textContent = 'Connected';
+          walletStatus.className = 'walletStatus connected';
+        }
       } else {
         // Show the original connect button
         if (connectButton) {
@@ -203,11 +255,38 @@ const WalletBridge: React.FC = () => {
             </div>
           `;
         }
+        
+        // Update settings panel wallet status
+        if (walletStatusText) {
+          walletStatusText.textContent = 'Not connected';
+        }
+        if (walletStatus) {
+          walletStatus.textContent = 'Not Connected';
+          walletStatus.className = 'walletStatus disconnected';
+        }
       }
     };
     
     // Update UI when wallet state changes
     updateWalletUI();
+    
+    // Add wallet state change listener
+    const handleWalletStateChange = () => {
+      console.log('🔄 Wallet state changed:', {
+        isConnected: wallet.isConnected,
+        address: wallet.address,
+        balance: wallet.stxBalance
+      });
+      updateWalletUI();
+    };
+    
+    // Listen for wallet state changes
+    const intervalId = setInterval(handleWalletStateChange, 1000);
+    
+    // Cleanup interval on unmount
+    return () => {
+      clearInterval(intervalId);
+    };
     
     // Add global wallet status indicator
     const addGlobalWalletIndicator = () => {
@@ -256,6 +335,46 @@ const WalletBridge: React.FC = () => {
     
     // Expose disconnect function globally
     window.disconnectWallet = wallet.disconnectWallet;
+
+    // Expose core game functions for HTML onclick handlers
+    window.PlayButtonActivate = () => {
+      console.log('🎮 PlayButtonActivate called from HTML');
+      // This will be handled by the React component's handlePlayClick
+      const playButton = document.querySelector('.menuButton');
+      if (playButton) {
+        (playButton as HTMLElement).click();
+      }
+    };
+
+    // buyLifeLine is defined in game.js and exposed globally there
+
+    // claimLastRun is defined in game.js and exposed globally there
+
+    // finalizeGameScore is defined in game.js and exposed globally there
+
+    window.Replay = () => {
+      console.log('🔄 Replay called from HTML');
+      // Restart the game
+      window.location.reload();
+    };
+
+    window.GoToHome = () => {
+      console.log('🏠 GoToHome called from HTML');
+      // Go back to main menu
+      const homeButton = document.querySelector('.homeButton');
+      if (homeButton) {
+        (homeButton as HTMLElement).click();
+      }
+    };
+
+    window.PauseToggle = () => {
+      console.log('⏸️ PauseToggle called from HTML');
+      // Toggle pause state
+      const pauseButton = document.querySelector('.pauseButton');
+      if (pauseButton) {
+        (pauseButton as HTMLElement).click();
+      }
+    };
     
     // Expose debug function globally
     window.debugWalletDetection = () => {
@@ -294,32 +413,223 @@ const WalletBridge: React.FC = () => {
 
           try {
             console.log('📋 Available contracts:', {
-              GameTokenR: wallet.getContractId('GameTokenR'),
-              QuestReward: wallet.getContractId('QuestReward'),
-              PlayerProf: wallet.getContractId('PlayerProf')
+              CoinQuestToken: wallet.getContractId('CoinQuestToken'),
+              CoinQuestGame: wallet.getContractId('CoinQuestGame')
             });
 
             // Test a simple contract call (if available)
-            const contractId = wallet.getContractId('QuestReward');
+            const contractId = wallet.getContractId('CoinQuestGame');
             if (contractId) {
-              console.log('✅ QuestReward contract found:', contractId);
+              console.log('✅ CoinQuestGame contract found:', contractId);
               console.log('🎮 Ready for game actions:');
-              console.log('  - Submit score: window.callStacksFinalize([score])');
-              console.log('  - Claim reward: window.callStacksClaim([questId])');
-              console.log('  - Buy life: window.callStacksBuyLife([])');
+              console.log('  - Submit score: window.callStacksFinalize()');
+              console.log('  - Claim reward: window.callStacksClaim()');
+              console.log('  - Buy life: window.callStacksBuyLife()');
 
               // Test submit score with a small score
               try {
+        const contractId = wallet.getContractId('CoinQuestGame');
+        if (!contractId) {
+          console.log('❌ Contract ID not found');
+          return;
+        }
+        
                 console.log('🧪 Testing submit-game-score...');
-                const result = await wallet.callContract(contractId, 'submit-game-score', [100]);
+        const result = await wallet.callContract(contractId, 'submit_game_score', [100]);
                 console.log('✅ Submit score test successful:', result);
               } catch (error) {
                 console.error('❌ Submit score test failed:', error);
               }
             } else {
-              console.error('❌ QuestReward contract not found');
+              console.error('❌ CoinQuestGame contract not found');
             }
 
+          } catch (error) {
+            console.error('❌ Contract test failed:', error);
+          }
+        };
+
+        // Simple test to see if wallet is ready for any calls
+        window.testWalletReadiness = async () => {
+          console.log('🧪 === TESTING WALLET READINESS ===');
+          
+          if (!wallet.isConnected) {
+            console.log('❌ Wallet not connected');
+            return;
+          }
+
+          console.log('🔍 Wallet state:', {
+            isConnected: wallet.isConnected,
+            address: wallet.address,
+            stxBalance: wallet.stxBalance
+          });
+
+          console.log('🔍 Available wallet objects:', {
+            xverse: !!(window as any).xverse,
+            LeatherProvider: !!(window as any).LeatherProvider,
+            StacksProvider: !!(window as any).StacksProvider
+          });
+
+          if ((window as any).xverse) {
+            console.log('🔍 Xverse methods:', Object.keys((window as any).xverse));
+            
+            // Test if we can make any request at all
+            try {
+              console.log('🧪 Testing basic Sats Connect request...');
+              const { request } = await import('sats-connect');
+              const result = await request('getAccounts', { purposes: ['payment' as any, 'ordinals' as any] });
+              console.log('✅ Basic Sats Connect request successful:', result);
+            } catch (error) {
+              console.log('❌ Basic Sats Connect request failed:', error);
+            }
+          }
+
+          // Test our contract call
+          try {
+            console.log('🧪 Testing contract call...');
+            const contractId = wallet.getContractId('CoinQuestGame');
+            if (!contractId) {
+              console.log('❌ Contract ID not found');
+              return;
+            }
+            
+            const result = await wallet.callContract(
+              contractId,
+              'buy_lifeline',
+              []
+            );
+            console.log('✅ Contract call successful:', result);
+          } catch (error) {
+            console.log('❌ Contract call failed:', error);
+          }
+        };
+
+        // Test with exact format from your example
+        window.testExactFormat = async () => {
+          console.log('🧪 === TESTING EXACT FORMAT ===');
+          
+          if (!wallet.isConnected) {
+            console.log('❌ Wallet not connected');
+            return;
+          }
+
+          try {
+            // First test: Try a read-only function (no transaction needed)
+            console.log('🧪 Testing read-only function first...');
+            const { request } = await import('sats-connect');
+            const readResult = await request("stx_callReadOnlyFunction" as any, {
+              contract: `${wallet.getContractId('CoinQuestGame')}`,
+              functionName: "get_total_quests",
+              functionArgs: []
+            });
+            console.log('✅ Read-only function successful:', readResult);
+            
+            // Second test: Try the actual contract call
+            console.log('🧪 Testing contract call...');
+            
+            // Try different network formats
+            const networkFormats = ['testnet', 'Testnet', 'testnet.stacks.co'];
+            
+            for (const network of networkFormats) {
+              try {
+                console.log(`🧪 Trying network format: ${network}`);
+                const result = await request("stx_callContract", {
+                  contract: `${wallet.getContractId('CoinQuestGame')}`,
+                  functionName: "buy_lifeline",
+                  functionArgs: []
+                });
+                
+                console.log(`✅ Contract call successful with network: ${network}`, result);
+                return result;
+              } catch (error) {
+                console.log(`⚠️ Failed with network ${network}:`, error instanceof Error ? error.message : String(error));
+                if (network === networkFormats[networkFormats.length - 1]) {
+                  throw error; // Re-throw the last error
+                }
+              }
+            }
+          } catch (error) {
+            console.error('❌ Exact format test failed:', error);
+            console.error('❌ Error details:', {
+              message: error instanceof Error ? error.message : String(error),
+              code: (error as any)?.code,
+              data: (error as any)?.data,
+              stack: error instanceof Error ? error.stack : undefined
+            });
+            throw error;
+          }
+        };
+
+        // Test simple contract call without Stacks Connect
+        window.testSimpleContractCall = async () => {
+          console.log('🧪 === TESTING SIMPLE CONTRACT CALL ===');
+          
+          if (!wallet.isConnected) {
+            console.log('❌ Wallet not connected');
+            return;
+          }
+
+          try {
+            // Try direct wallet call first
+            if ((window as any).xverse?.request) {
+              console.log('🔍 Trying direct Xverse call...');
+              try {
+                const result = await (window as any).xverse.request({
+                  method: 'stx_callContract',
+                  params: {
+                    contractAddress: 'ST18YM565C2RG5W8DFDT5W577YMG5QSAKVRG0MGV1',
+                    contractName: 'CoinQuestGame',
+                    functionName: 'buy_lifeline',
+                    functionArgs: [],
+                    network: 'testnet'
+                  }
+                });
+                console.log('✅ Direct Xverse call successful:', result);
+                return result;
+              } catch (error) {
+                console.log('⚠️ Direct Xverse call failed:', error);
+              }
+            }
+
+            // Try through React wallet system
+            console.log('🔍 Trying React wallet system...');
+            const contractId = wallet.getContractId('CoinQuestGame');
+            if (contractId) {
+              const result = await wallet.callContract(contractId, 'buy_lifeline', []);
+              console.log('✅ React wallet call successful:', result);
+              return result;
+            }
+          } catch (error) {
+            console.error('❌ Simple contract call failed:', error);
+          }
+        };
+
+        // Test contract initialization and readiness
+        window.testContractInitialization = async () => {
+          console.log('🧪 === TESTING CONTRACT INITIALIZATION ===');
+          
+          if (!wallet.isConnected) {
+            console.log('❌ Wallet not connected for contract test');
+            return;
+          }
+
+          try {
+            console.log('📋 Available contracts:', {
+              CoinQuestToken: wallet.getContractId('CoinQuestToken'),
+              CoinQuestGame: wallet.getContractId('CoinQuestGame')
+            });
+
+            // Test a simple contract call (if available)
+            const contractId = wallet.getContractId('CoinQuestGame');
+            if (contractId) {
+              console.log('✅ CoinQuestGame contract found:', contractId);
+              console.log('🎮 Ready for game actions:');
+              console.log('  - Submit Score: wallet.callContract(contractId, "submit_game_score", [score])');
+              console.log('  - Claim Reward: wallet.callContract(contractId, "claim_quest_reward", [questId])');
+              console.log('  - Buy Life: wallet.callContract(contractId, "buy_lifeline", [])');
+            } else {
+              console.log('❌ CoinQuestGame contract not found');
+            }
           } catch (error) {
             console.error('❌ Contract test failed:', error);
           }
@@ -336,14 +646,14 @@ const WalletBridge: React.FC = () => {
           }
 
           try {
-            const contractId = wallet.getContractId('QuestReward');
+            const contractId = wallet.getContractId('CoinQuestGame');
             if (contractId) {
-              console.log('🔧 Initializing QuestReward contract with GameToken integration...');
-              const result = await wallet.callContract(contractId, 'initialize-with-game-token', []);
+              console.log('🔧 Initializing CoinQuestGame contract with CoinQuestToken integration...');
+              const result = await wallet.callContract(contractId, 'initialize_with_game_token', []);
               console.log('✅ Contract initialization successful:', result);
               alert('Contract integration initialized successfully!');
             } else {
-              console.error('❌ QuestReward contract not found');
+              console.error('❌ CoinQuestGame contract not found');
             }
           } catch (error) {
             console.error('❌ Contract initialization failed:', error);
@@ -351,36 +661,238 @@ const WalletBridge: React.FC = () => {
           }
         };
 
-  }, [wallet]);
+  }, [wallet.isConnected, wallet.address, wallet.stxBalance]);
 
   return null; // This component doesn't render anything
 };
 
+// Standalone functions outside React context to avoid serialization issues
+const createStandaloneContractFunctions = () => {
+  // Submit game score function
+  window.callStacksFinalize = async function() {
+    console.log('📊 === SUBMIT SCORE DEBUG (STANDALONE) ===');
+    console.log('📊 Function source: STANDALONE (no React context)');
+    
+    try {
+      // Get score from global variable
+      let score: number;
+      
+      if (window.currentGameScore !== undefined) {
+        score = Number(window.currentGameScore);
+        console.log('📊 Score from global variable:', score, typeof score);
+      } else {
+        score = 100; // Default fallback
+        console.log('📊 Using default score:', score);
+      }
+      
+      console.log('📊 Score extracted:', score);
+      
+      // Try direct wallet call first
+      try {
+        console.log('🔍 Attempting direct wallet call...');
+        const { request } = await import('sats-connect');
+        
+        console.log('🔍 Contract call parameters:', {
+          contract: 'ST18YM565C2RG5W8DFDT5W577YMG5QSAKVRG0MGV1.CoinQuestGame',
+          functionName: 'submit_game_score',
+          functionArgs: [String(score)],
+          functionArgsTypes: [typeof score],
+          network: 'testnet'
+        });
+        
+        const result = await request('stx_callContract', {
+          contract: 'ST18YM565C2RG5W8DFDT5W577YMG5QSAKVRG0MGV1.CoinQuestGame',
+          functionName: 'submit_game_score',
+          functionArgs: [String(score)]
+        });
+        
+        console.log('✅ Direct wallet call successful:', result);
+        
+        // Check if the result indicates success
+        if (result && result.status === 'success') {
+          alert(`🎉 SUCCESS! Score submitted successfully!\n\n📊 Score: ${score} points\n💰 You earned tokens for your achievement!\n\nTransaction ID: ${(result as any).txId || (result as any).result?.txid || 'N/A'}`);
+        } else if (result && (result as any).txId) {
+          alert(`✅ Score submitted successfully!\n\n📊 Score: ${score} points\n💰 You earned tokens for your achievement!\n\nTransaction ID: ${(result as any).txId}`);
+        } else {
+          alert(`✅ Score submitted successfully!\n\n📊 Score: ${score} points\n💰 You earned tokens for your achievement!`);
+        }
+        
+        return result;
+      } catch (directError) {
+        console.log('⚠️ Direct wallet call failed:', directError);
+        alert(`❌ Failed to submit score: ${directError instanceof Error ? directError.message : String(directError)}`);
+        throw directError;
+      }
+    } catch (error) {
+      console.error('❌ Failed to submit score:', error);
+      if (error instanceof Error && error.message === 'User canceled transaction') {
+        alert('❌ Transaction canceled. Your score was not saved.');
+      } else {
+        alert(`❌ Failed to submit score: ${error instanceof Error ? error.message : String(error)}`);
+      }
+      throw error;
+    }
+  };
+
+  // Claim quest reward function
+  window.callStacksClaim = async function() {
+    console.log('🎁 === CLAIM REWARD DEBUG (STANDALONE) ===');
+    console.log('🎁 Function source: STANDALONE (no React context)');
+    
+    try {
+      // Get quest ID from global variable
+      let questId: number;
+      
+      if (window.currentQuestId !== undefined) {
+        questId = Number(window.currentQuestId);
+        console.log('🎁 Quest ID from global variable:', questId, typeof questId);
+      } else {
+        questId = 1; // Default fallback
+        console.log('🎁 Using default quest ID:', questId);
+      }
+      
+      console.log('🎁 Quest ID extracted:', questId);
+      
+      // Try direct wallet call first
+      try {
+        console.log('🔍 Attempting direct wallet call...');
+        const { request } = await import('sats-connect');
+        
+        const result = await request('stx_callContract', {
+          contract: 'ST18YM565C2RG5W8DFDT5W577YMG5QSAKVRG0MGV1.CoinQuestGame',
+          functionName: 'claim_quest_reward',
+          functionArgs: [String(questId)]
+        });
+        
+        console.log('✅ Direct wallet call successful:', result);
+        
+        // Check if the result indicates success
+        if (result && result.status === 'success') {
+          alert(`🎉 SUCCESS! Quest reward claimed!\n\n🏆 Quest ID: ${questId}\n💰 Reward tokens added to your balance!\n\nTransaction ID: ${(result as any).txId || (result as any).result?.txid || 'N/A'}`);
+        } else if (result && (result as any).txId) {
+          alert(`✅ Quest reward claimed successfully!\n\n🏆 Quest ID: ${questId}\n💰 Reward tokens added to your balance!\n\nTransaction ID: ${(result as any).txId}`);
+        } else {
+          alert(`✅ Quest reward claimed successfully!\n\n🏆 Quest ID: ${questId}\n💰 Reward tokens added to your balance!`);
+        }
+        
+        return result;
+      } catch (directError) {
+        console.log('⚠️ Direct wallet call failed:', directError);
+        alert(`❌ Failed to claim reward: ${directError instanceof Error ? directError.message : String(directError)}`);
+        throw directError;
+      }
+    } catch (error) {
+      console.error('❌ Failed to claim reward:', error);
+      if (error instanceof Error && error.message === 'User canceled transaction') {
+        alert('❌ Transaction canceled. Your reward was not claimed.');
+      } else {
+        alert(`❌ Failed to claim reward: ${error instanceof Error ? error.message : String(error)}`);
+      }
+      throw error;
+    }
+  };
+
+  // Buy lifeline function
+  window.callStacksBuyLife = async function() {
+    console.log('🔍 === BUY LIFE DEBUG (STANDALONE) ===');
+    console.log('🔍 Function source: STANDALONE (no React context)');
+    
+    try {
+      // Try direct wallet call first
+      try {
+        console.log('🔍 Attempting direct wallet call...');
+        const { request } = await import('sats-connect');
+        
+        const result = await request('stx_callContract', {
+          contract: 'ST18YM565C2RG5W8DFDT5W577YMG5QSAKVRG0MGV1.CoinQuestGame',
+          functionName: 'buy_lifeline',
+          functionArgs: []
+        });
+        
+        console.log('✅ Direct wallet call successful:', result);
+        
+        // Check if the result indicates success
+        if (result && result.status === 'success') {
+          alert(`🎉 SUCCESS! Lifeline purchased!\n\n💊 Extra life added to your game!\n💰 Cost: 10 COINQ tokens\n\nTransaction ID: ${(result as any).txId || (result as any).result?.txid || 'N/A'}`);
+        } else if (result && (result as any).txId) {
+          alert(`✅ Lifeline purchased successfully!\n\n💊 Extra life added to your game!\n💰 Cost: 10 COINQ tokens\n\nTransaction ID: ${(result as any).txId}`);
+        } else {
+          alert(`✅ Lifeline purchased successfully!\n\n💊 Extra life added to your game!\n💰 Cost: 10 COINQ tokens`);
+        }
+        
+        return result;
+      } catch (directError) {
+        console.log('⚠️ Direct wallet call failed:', directError);
+        alert(`❌ Failed to buy lifeline: ${directError instanceof Error ? directError.message : String(directError)}`);
+        throw directError;
+      }
+    } catch (error) {
+      console.error('❌ Failed to buy lifeline:', error);
+      if (error instanceof Error && error.message === 'User canceled transaction') {
+        alert('❌ Transaction canceled. Your lifeline was not purchased.');
+      } else {
+        alert(`❌ Failed to buy lifeline: ${error instanceof Error ? error.message : String(error)}`);
+      }
+      throw error;
+    }
+  };
+};
+
+// Call the function to create standalone functions
+createStandaloneContractFunctions();
+
+// Debug: Verify functions are created
+console.log('🔍 === STANDALONE FUNCTIONS CREATED ===');
+console.log('🔍 callStacksFinalize:', typeof window.callStacksFinalize);
+console.log('🔍 callStacksClaim:', typeof window.callStacksClaim);
+console.log('🔍 callStacksBuyLife:', typeof window.callStacksBuyLife);
+
+// Debug: Check game functions after a delay to see if they're overridden
+setTimeout(() => {
+  console.log('🔍 === GAME FUNCTIONS CHECK (after 2 seconds) ===');
+  console.log('🔍 finalizeGameScore:', typeof window.finalizeGameScore);
+  console.log('🔍 claimLastRun:', typeof window.claimLastRun);
+  console.log('🔍 buyLifeLine:', typeof window.buyLifeLine);
+  
+  if (typeof window.finalizeGameScore === 'function') {
+    console.log('🔍 finalizeGameScore source:', window.finalizeGameScore.toString().substring(0, 100) + '...');
+  }
+}, 2000);
+
 function App() {
   const [gameStarted, setGameStarted] = useState(false);
 
+  // Debug logging
+  useEffect(() => {
+    console.log('🚀 App component mounted');
+    console.log('🚀 Game started:', gameStarted);
+  }, [gameStarted]);
+
   const handlePlayClick = () => {
+    console.log('🎮 Play button clicked - starting game');
     setGameStarted(true);
   };
 
+  // Listen for HTML play button clicks
+  useEffect(() => {
+    const playButton = document.querySelector('.menuButton');
+    if (playButton) {
+      const handlePlayClick = () => {
+        console.log('🎮 HTML Play button clicked - starting game');
+        setGameStarted(true);
+      };
+      
+      playButton.addEventListener('click', handlePlayClick);
+      return () => playButton.removeEventListener('click', handlePlayClick);
+    }
+  }, []);
+
   const handleBackToMenu = () => {
+    console.log('🔙 Back to menu clicked');
     setGameStarted(false);
   };
 
-  const handleScoreSubmit = (result: any) => {
-    console.log('Score submitted successfully:', result);
-    alert('Score submitted to blockchain!');
-  };
-
-  const handleRewardClaim = (result: any) => {
-    console.log('Reward claimed successfully:', result);
-    alert('Reward claimed from blockchain!');
-  };
-
-  const handleLifePurchase = (result: any) => {
-    console.log('Life purchased successfully:', result);
-    alert('Life purchased from blockchain!');
-  };
+  // Unused handler functions removed to fix build errors
 
   return (
     <WalletProvider>
@@ -420,46 +932,7 @@ function App() {
                 ← Back to Menu
               </button>
               
-              <div className="gameCanvas">
-                <canvas 
-                  id="gameCanvas"
-                  width="800" 
-                  height="600"
-                  style={{ 
-                    width: '100%', 
-                    height: '100%',
-                    display: 'block',
-                    background: 'linear-gradient(180deg, #87CEEB 0%, #98FB98 100%)'
-                  }}
-                />
-                
-                {/* Game UI Overlay */}
-                <div className="gameUI">
-                  <div className="score" id="scoreDisplay">Score: 0</div>
-                  <div className="coins" id="coinsDisplay">Coins: 0</div>
-                  
-                  {/* Wallet Status */}
-                  <WalletStatus showDetails={false} />
-                  
-                  {/* Contract Interaction Buttons */}
-                  <div className="contractControls">
-                    <SubmitScoreButton 
-                      score={0}
-                      onSuccess={handleScoreSubmit}
-                      className="contract-btn"
-                    />
-                    <ClaimRewardButton 
-                      questId={1}
-                      onSuccess={handleRewardClaim}
-                      className="contract-btn"
-                    />
-                    <BuyLifeButton 
-                      onSuccess={handleLifePurchase}
-                      className="contract-btn"
-                    />
-                  </div>
-                </div>
-              </div>
+              <CoinQuestGame />
             </div>
           )}
       </div>

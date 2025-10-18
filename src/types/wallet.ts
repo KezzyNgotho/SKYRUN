@@ -27,6 +27,15 @@ export interface WalletActions {
   refreshBalance: (address: string) => Promise<void>;
   callContract: (contractId: string, functionName: string, functionArgs: any[]) => Promise<any>;
   getContractId: (name: string) => string | null;
+  checkWalletConnection: () => {
+    hasAddress: boolean;
+    hasUserSession: boolean;
+    hasXverse: boolean;
+    hasLeather: boolean;
+    isStacksConnected: boolean;
+    isConnected: boolean;
+    overallConnected: boolean;
+  };
 }
 
 export type WalletContextType = WalletState & WalletActions;

@@ -93,3 +93,6 @@ export const WalletStatus: React.FC<WalletStatusProps> = ({
     </div>
   );
 };
+
+// Add display name for React Fast Refresh
+WalletStatus.displayName = 'WalletStatus';

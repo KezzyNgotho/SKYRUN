@@ -12,12 +12,12 @@ export const useWalletConnect = () => {
       throw new Error('Wallet not connected');
     }
 
-    const contractId = wallet.getContractId('QuestReward');
+    const contractId = wallet.getContractId('CoinQuestGame');
     if (!contractId) {
-      throw new Error('QuestReward contract not found');
+      throw new Error('CoinQuestGame contract not found');
     }
 
-    return await wallet.callContract(contractId, 'submit-game-score', [score]);
+    return await wallet.callContract(contractId, 'submit_game_score', [score]);
   };
 
   const claimQuestReward = async (questId: number = 1) => {
@@ -25,12 +25,12 @@ export const useWalletConnect = () => {
       throw new Error('Wallet not connected');
     }
 
-    const contractId = wallet.getContractId('QuestReward');
+    const contractId = wallet.getContractId('CoinQuestGame');
     if (!contractId) {
-      throw new Error('QuestReward contract not found');
+      throw new Error('CoinQuestGame contract not found');
     }
 
-    return await wallet.callContract(contractId, 'claim-quest-reward', [questId]);
+    return await wallet.callContract(contractId, 'claim_quest_reward', [questId]);
   };
 
   const buyLifeLine = async () => {
@@ -38,12 +38,12 @@ export const useWalletConnect = () => {
       throw new Error('Wallet not connected');
     }
 
-    const contractId = wallet.getContractId('QuestReward');
+    const contractId = wallet.getContractId('CoinQuestGame');
     if (!contractId) {
-      throw new Error('QuestReward contract not found');
+      throw new Error('CoinQuestGame contract not found');
     }
 
-    return await wallet.callContract(contractId, 'buy-lifeline', []);
+    return await wallet.callContract(contractId, 'buy_lifeline', []);
   };
 
   const getShortAddress = (address?: string) => {
@@ -68,9 +68,8 @@ export const useWalletConnect = () => {
     formatBalance,
     // Contract IDs
         contracts: {
-          GameTokenR: wallet.getContractId('GameTokenR'),
-          QuestReward: wallet.getContractId('QuestReward'),
-          PlayerProf: wallet.getContractId('PlayerProf'),
+        CoinQuestToken: wallet.getContractId('CoinQuestToken'),
+        CoinQuestGame: wallet.getContractId('CoinQuestGame'),
         }
   };
 };

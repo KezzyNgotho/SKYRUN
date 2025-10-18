@@ -13,9 +13,8 @@ if ((window as any).StacksProvider && !(window as any).StacksProviderConflictHan
 // Stacks contracts from deployments/Testnet.toml
 const STACKS_DEPLOYER = 'ST18YM565C2RG5W8DFDT5W577YMG5QSAKVRG0MGV1';
 const STACKS_CONTRACTS = {
-  GameTokenR: `${STACKS_DEPLOYER}.GameTokenR`,
-  QuestReward: `${STACKS_DEPLOYER}.QuestReward`,
-  PlayerProf: `${STACKS_DEPLOYER}.PlayerProf`,
+  CoinQuestToken: `${STACKS_DEPLOYER}.CoinQuestToken`,
+  CoinQuestGame: `${STACKS_DEPLOYER}.CoinQuestGame`,
 };
 
 // Types imported from ../types/wallet
@@ -30,6 +29,9 @@ export const useWallet = () => {
   return context;
 };
 
+// Add display name for React Fast Refresh
+useWallet.displayName = 'useWallet';
+
 interface WalletProviderProps {
   children: ReactNode;
 }
@@ -41,7 +43,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
   const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const isConnected = !!address;
+  const isConnected = !!(address && (userSession || (window as any).xverse || (window as any).LeatherProvider));
 
   // Initialize app config and session
   const getAppConfig = useCallback(async () => {
@@ -158,6 +160,53 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
           if (stacksAddress) {
             console.log('✅ Stacks address found:', stacksAddress);
             setAddress(stacksAddress);
+            
+            // Create a proper UserSession for Sats Connect compatibility
+            try {
+              const { UserSession, AppConfig } = await import('@stacks/connect');
+              const appConfig = new AppConfig(['store_write', 'publish_data'], window.location.origin);
+              const userSession = new UserSession({ appConfig });
+              
+              // Create a proper user data structure
+              const userData = {
+                profile: {
+                  stxAddress_testnet: stacksAddress,
+                  stxAddress_mainnet: stacksAddress
+                },
+                username: stacksAddress,
+                identityAddress: stacksAddress,
+                appPrivateKey: 'dummy-key-for-testing',
+                coreNode: 'https://stacks-node-api.testnet.stacks.co',
+                hubUrl: 'https://hub.testnet.stacks.co',
+                version: '1.0.0'
+              };
+              
+              // Properly initialize the session
+              (userSession as any).userData = userData;
+              (userSession as any)._isSignInPending = false;
+              (userSession as any)._isSignInComplete = true;
+              
+              // Override the isUserSignedIn method to return true
+              userSession.isUserSignedIn = () => true;
+              
+              setUserSession(userSession);
+              console.log('✅ Proper UserSession created for Sats Connect');
+              console.log('✅ UserSession isUserSignedIn:', userSession.isUserSignedIn());
+            } catch (error) {
+              console.error('❌ Failed to create UserSession:', error);
+              // Fallback to mock session
+              const mockUserSession = {
+                isUserSignedIn: () => true,
+                loadUserData: () => ({
+                  profile: {
+                    stxAddress_testnet: stacksAddress,
+                    stxAddress_mainnet: stacksAddress
+                  }
+                })
+              };
+              setUserSession(mockUserSession);
+            }
+            
             await refreshBalance(stacksAddress);
             
             console.log('✅ Wallet connected successfully!');
@@ -232,6 +281,53 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
               console.log('✅ Xverse direct connection successful:', address);
               
               setAddress(address);
+              
+              // Create a proper UserSession for Xverse direct compatibility
+              try {
+                const { UserSession, AppConfig } = await import('@stacks/connect');
+                const appConfig = new AppConfig(['store_write', 'publish_data'], window.location.origin);
+                const userSession = new UserSession({ appConfig });
+                
+                // Create a proper user data structure
+                const userData = {
+                  profile: {
+                    stxAddress_testnet: address,
+                    stxAddress_mainnet: address
+                  },
+                  username: address,
+                  identityAddress: address,
+                  appPrivateKey: 'dummy-key-for-testing',
+                  coreNode: 'https://stacks-node-api.testnet.stacks.co',
+                  hubUrl: 'https://hub.testnet.stacks.co',
+                  version: '1.0.0'
+                };
+                
+                // Properly initialize the session
+                (userSession as any).userData = userData;
+                (userSession as any)._isSignInPending = false;
+                (userSession as any)._isSignInComplete = true;
+                
+                // Override the isUserSignedIn method to return true
+                userSession.isUserSignedIn = () => true;
+                
+                setUserSession(userSession);
+                console.log('✅ Proper UserSession created for Xverse direct connection');
+                console.log('✅ UserSession isUserSignedIn:', userSession.isUserSignedIn());
+              } catch (error) {
+                console.error('❌ Failed to create UserSession:', error);
+                // Fallback to mock session
+                const mockUserSession = {
+                  isUserSignedIn: () => true,
+                  loadUserData: () => ({
+                    profile: {
+                      stxAddress_testnet: address,
+                      stxAddress_mainnet: address
+                    }
+                  })
+                };
+                setUserSession(mockUserSession);
+              }
+              
               await refreshBalance(address);
               
               console.log('✅ Wallet connected successfully!');
@@ -257,6 +353,53 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
               console.log('✅ Hiro/Leather direct connection successful:', address);
               
               setAddress(address);
+              
+              // Create a proper UserSession for Leather direct compatibility
+              try {
+                const { UserSession, AppConfig } = await import('@stacks/connect');
+                const appConfig = new AppConfig(['store_write', 'publish_data'], window.location.origin);
+                const userSession = new UserSession({ appConfig });
+                
+                // Create a proper user data structure
+                const userData = {
+                  profile: {
+                    stxAddress_testnet: address,
+                    stxAddress_mainnet: address
+                  },
+                  username: address,
+                  identityAddress: address,
+                  appPrivateKey: 'dummy-key-for-testing',
+                  coreNode: 'https://stacks-node-api.testnet.stacks.co',
+                  hubUrl: 'https://hub.testnet.stacks.co',
+                  version: '1.0.0'
+                };
+                
+                // Properly initialize the session
+                (userSession as any).userData = userData;
+                (userSession as any)._isSignInPending = false;
+                (userSession as any)._isSignInComplete = true;
+                
+                // Override the isUserSignedIn method to return true
+                userSession.isUserSignedIn = () => true;
+                
+                setUserSession(userSession);
+                console.log('✅ Proper UserSession created for Leather direct connection');
+                console.log('✅ UserSession isUserSignedIn:', userSession.isUserSignedIn());
+              } catch (error) {
+                console.error('❌ Failed to create UserSession:', error);
+                // Fallback to mock session
+                const mockUserSession = {
+                  isUserSignedIn: () => true,
+                  loadUserData: () => ({
+                    profile: {
+                      stxAddress_testnet: address,
+                      stxAddress_mainnet: address
+                    }
+                  })
+                };
+                setUserSession(mockUserSession);
+              }
+              
               await refreshBalance(address);
               
               console.log('✅ Wallet connected successfully!');
@@ -412,58 +555,664 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     setError(null);
   }, [userSession]);
 
+
   const callContract = useCallback(async (
     contractId: string, 
     functionName: string, 
     functionArgs: any[]
   ) => {
+    console.log('🔍 === CONTRACT CALL DEBUG ===');
+    console.log('🔍 Contract ID:', contractId);
+    console.log('🔍 Function:', functionName);
+    console.log('🔍 Args:', functionArgs);
+    console.log('🔍 User session exists:', !!userSession);
+    console.log('🔍 User session signed in:', userSession?.isUserSignedIn?.());
+    console.log('🔍 Address:', address);
     console.log('🔗 Contract call initiated:', { contractId, functionName, functionArgs });
     
-    if (!userSession?.isUserSignedIn?.()) {
-      console.error('❌ Wallet not connected for contract call');
-      throw new Error('Wallet not connected');
+    // Don't convert to Clarity values here - do it in each wallet call to avoid serialization issues
+    console.log('🔍 Raw function args:', functionArgs);
+    
+    // Try direct wallet contract calls first (for Xverse/Leather)
+    // Check if wallet is connected through any method
+    const isWalletConnected = address && (
+      isConnected || 
+      userSession?.isUserSignedIn?.() || 
+      (window as any).xverse?.request || 
+      (window as any).LeatherProvider?.request
+    );
+    
+    console.log('🔍 === WALLET CONNECTION DEBUG ===');
+    console.log('🔍 Address:', address);
+    console.log('🔍 isConnected:', isConnected);
+    console.log('🔍 userSession?.isUserSignedIn?.():', userSession?.isUserSignedIn?.());
+    console.log('🔍 (window as any).xverse:', !!(window as any).xverse);
+    console.log('🔍 (window as any).xverse?.request:', !!(window as any).xverse?.request);
+    console.log('🔍 (window as any).LeatherProvider:', !!(window as any).LeatherProvider);
+    console.log('🔍 (window as any).LeatherProvider?.request:', !!(window as any).LeatherProvider?.request);
+    console.log('🔍 Final isWalletConnected:', isWalletConnected);
+    
+    if ((window as any).xverse) {
+      console.log('🔍 Xverse methods:', Object.keys((window as any).xverse));
+    }
+    
+    // Try Sats Connect for contract calls (proper way)
+    if (isWalletConnected) {
+      console.log('🔍 === ATTEMPTING SATS CONNECT CONTRACT CALL ===');
+      console.log('🔍 Wallet connected:', isWalletConnected);
+      
+      try {
+        console.log('🔍 Importing Sats Connect...');
+        const { request } = await import('sats-connect');
+        
+        // Convert to Clarity values for Sats Connect - do it directly to avoid serialization issues
+        let clarityArgs;
+        try {
+          const { uintCV, stringUtf8CV, boolCV } = await import('@stacks/transactions');
+          
+          clarityArgs = functionArgs.map(arg => {
+            // If already a Clarity value, return as-is
+            if (arg && typeof arg === 'object' && arg.type) {
+              return arg;
+            }
+            
+            // Convert based on type
+            if (typeof arg === 'number') {
+              return uintCV(arg);
+            } else if (typeof arg === 'string') {
+              return stringUtf8CV(arg);
+            } else if (typeof arg === 'boolean') {
+              return boolCV(arg);
+            }
+            
+            // Fallback to raw value
+            return arg;
+          });
+        } catch (error) {
+          console.warn('Failed to import Clarity value converters:', error);
+          clarityArgs = functionArgs; // Use raw values as fallback
+        }
+        
+        console.log('🔍 Contract call parameters:', {
+          contract: contractId,
+          functionName,
+          functionArgs: clarityArgs,
+          network: 'testnet'
+        });
+        
+        // Use Sats Connect for contract calls
+        const result = await request('stx_callContract', {
+          contract: contractId,
+          functionName,
+          functionArgs: clarityArgs
+        });
+        
+        console.log('✅ Sats Connect contract call successful:', result);
+        return result;
+      } catch (error) {
+        console.log('⚠️ Sats Connect contract call failed:', error);
+        console.log('⚠️ Error details:', {
+          message: error instanceof Error ? error.message : String(error),
+          code: (error as any)?.code,
+          data: (error as any)?.data,
+          stack: error instanceof Error ? error.stack : undefined
+        });
+        // Continue to try other methods
+      }
+    }
+    
+    // Try Leather direct contract calls
+    if (isWalletConnected && (window as any).LeatherProvider?.request) {
+      console.log('🔍 Trying Leather direct contract call...');
+      console.log('🔍 Available Leather methods:', Object.keys((window as any).LeatherProvider));
+        try {
+          const leather = (window as any).LeatherProvider;
+          const contractAddress = contractId.split('.')[0];
+          const contractName = contractId.split('.')[1];
+          
+          // Convert to Clarity values for Leather - do it directly to avoid serialization issues
+          let clarityArgs;
+          try {
+            const { uintCV, stringUtf8CV, boolCV } = await import('@stacks/transactions');
+            
+            clarityArgs = functionArgs.map(arg => {
+              // If already a Clarity value, return as-is
+              if (arg && typeof arg === 'object' && arg.type) {
+                return arg;
+              }
+              
+              // Convert based on type
+              if (typeof arg === 'number') {
+                return uintCV(arg);
+              } else if (typeof arg === 'string') {
+                return stringUtf8CV(arg);
+              } else if (typeof arg === 'boolean') {
+                return boolCV(arg);
+              }
+              
+              // Fallback to raw value
+              return arg;
+            });
+          } catch (error) {
+            console.warn('Failed to import Clarity value converters:', error);
+            clarityArgs = functionArgs; // Use raw values as fallback
+          }
+          
+          // Try the correct Leather method for contract calls
+          console.log('🔍 Trying Leather contract call method...');
+            const result = await leather.request({
+              method: 'stx_callContract',
+              params: {
+                contractAddress,
+                contractName,
+                functionName,
+                functionArgs: clarityArgs,
+                network: 'testnet'
+              }
+            });
+        
+        console.log('✅ Leather contract call successful:', result);
+        return result;
+      } catch (error) {
+        console.log('⚠️ Leather direct contract call failed:', error);
+        // Don't fall back to Stacks Connect yet, try alternative methods first
+      }
+    }
+    
+    // If wallet is connected but direct methods failed, try alternative approaches
+    if (isWalletConnected) {
+      console.log('🔍 Wallet is connected but direct methods failed, trying alternative approaches...');
+      
+      // Try to use the connected wallet through different methods
+      if ((window as any).xverse) {
+        console.log('🔍 Trying Xverse alternative methods...');
+        try {
+          const xverse = (window as any).xverse;
+          const contractAddress = contractId.split('.')[0];
+          const contractName = contractId.split('.')[1];
+          
+          // Convert to Clarity values
+          let clarityArgs;
+          try {
+            const { uintCV, stringUtf8CV, boolCV } = await import('@stacks/transactions');
+            
+            clarityArgs = functionArgs.map(arg => {
+              // If already a Clarity value, return as-is
+              if (arg && typeof arg === 'object' && arg.type) {
+                return arg;
+              }
+              
+              // Convert based on type
+              if (typeof arg === 'number') {
+                return uintCV(arg);
+              } else if (typeof arg === 'string') {
+                return stringUtf8CV(arg);
+              } else if (typeof arg === 'boolean') {
+                return boolCV(arg);
+              }
+              
+              // Fallback to raw value
+              return arg;
+            });
+          } catch (error) {
+            console.warn('Failed to import Clarity value converters:', error);
+            clarityArgs = functionArgs; // Use raw values as fallback
+          }
+          
+          // Try different Sats Connect methods
+          const methods = ['stx_callContract', 'callContract', 'sendTransaction'];
+          for (const method of methods) {
+            try {
+              console.log(`🔍 Trying Xverse ${method}...`);
+                const result = await xverse.request({
+                  method: method,
+                  params: {
+                    contractAddress,
+                    contractName,
+                    functionName,
+                    functionArgs: clarityArgs,
+                    network: 'testnet'
+                  }
+                });
+              console.log(`✅ Xverse ${method} successful:`, result);
+              return result;
+            } catch (methodError) {
+              console.log(`⚠️ Xverse ${method} failed:`, methodError instanceof Error ? methodError.message : String(methodError));
+            }
+          }
+        } catch (error) {
+          console.log('⚠️ Xverse alternative methods failed:', error);
+        }
+      }
+      
+      if ((window as any).LeatherProvider) {
+        console.log('🔍 Trying Leather alternative methods...');
+        try {
+          const leather = (window as any).LeatherProvider;
+          const contractAddress = contractId.split('.')[0];
+          const contractName = contractId.split('.')[1];
+          
+          // Convert to Clarity values
+          let clarityArgs;
+          try {
+            const { uintCV, stringUtf8CV, boolCV } = await import('@stacks/transactions');
+            
+            clarityArgs = functionArgs.map(arg => {
+              // If already a Clarity value, return as-is
+              if (arg && typeof arg === 'object' && arg.type) {
+                return arg;
+              }
+              
+              // Convert based on type
+              if (typeof arg === 'number') {
+                return uintCV(arg);
+              } else if (typeof arg === 'string') {
+                return stringUtf8CV(arg);
+              } else if (typeof arg === 'boolean') {
+                return boolCV(arg);
+              }
+              
+              // Fallback to raw value
+              return arg;
+            });
+          } catch (error) {
+            console.warn('Failed to import Clarity value converters:', error);
+            clarityArgs = functionArgs; // Use raw values as fallback
+          }
+          
+          // Try different Leather methods
+          const methods = ['stx_callContract', 'callContract', 'sendTransaction'];
+          for (const method of methods) {
+            try {
+              console.log(`🔍 Trying Leather ${method}...`);
+                const result = await leather.request({
+                  method: method,
+                  params: {
+                    contractAddress,
+                    contractName,
+                    functionName,
+                    functionArgs: clarityArgs,
+                    network: 'testnet'
+                  }
+                });
+              console.log(`✅ Leather ${method} successful:`, result);
+              return result;
+            } catch (methodError) {
+              console.log(`⚠️ Leather ${method} failed:`, methodError instanceof Error ? methodError.message : String(methodError));
+            }
+          }
+        } catch (error) {
+          console.log('⚠️ Leather alternative methods failed:', error);
+        }
+      }
+      
+      // If all direct methods failed, try to use the wallet's native methods
+      console.log('🔍 All direct methods failed, trying native wallet methods...');
+      
+      // Try to use the wallet's native methods without Stacks Connect
+      if ((window as any).xverse && (window as any).xverse.request) {
+        try {
+          console.log('🔍 Trying Xverse native method...');
+          
+          // Convert to Clarity values
+          let clarityArgs;
+          try {
+            const { uintCV, stringUtf8CV, boolCV } = await import('@stacks/transactions');
+            
+            clarityArgs = functionArgs.map(arg => {
+              // If already a Clarity value, return as-is
+              if (arg && typeof arg === 'object' && arg.type) {
+                return arg;
+              }
+              
+              // Convert based on type
+              if (typeof arg === 'number') {
+                return uintCV(arg);
+              } else if (typeof arg === 'string') {
+                return stringUtf8CV(arg);
+              } else if (typeof arg === 'boolean') {
+                return boolCV(arg);
+              }
+              
+              // Fallback to raw value
+              return arg;
+            });
+          } catch (error) {
+            console.warn('Failed to import Clarity value converters:', error);
+            clarityArgs = functionArgs; // Use raw values as fallback
+          }
+          
+          const result = await (window as any).xverse.request({
+            method: 'stx_callContract',
+            params: {
+              contractAddress: contractId.split('.')[0],
+              contractName: contractId.split('.')[1],
+              functionName,
+              functionArgs: clarityArgs,
+              network: 'testnet'
+            }
+          });
+          console.log('✅ Xverse native method successful:', result);
+          return result;
+        } catch (error) {
+          console.log('⚠️ Xverse native method failed:', error);
+        }
+      }
+      
+      if ((window as any).LeatherProvider && (window as any).LeatherProvider.request) {
+        try {
+          console.log('🔍 Trying Leather native method...');
+          
+          // Convert to Clarity values
+          let clarityArgs;
+          try {
+            const { uintCV, stringUtf8CV, boolCV } = await import('@stacks/transactions');
+            
+            clarityArgs = functionArgs.map(arg => {
+              // If already a Clarity value, return as-is
+              if (arg && typeof arg === 'object' && arg.type) {
+                return arg;
+              }
+              
+              // Convert based on type
+              if (typeof arg === 'number') {
+                return uintCV(arg);
+              } else if (typeof arg === 'string') {
+                return stringUtf8CV(arg);
+              } else if (typeof arg === 'boolean') {
+                return boolCV(arg);
+              }
+              
+              // Fallback to raw value
+              return arg;
+            });
+          } catch (error) {
+            console.warn('Failed to import Clarity value converters:', error);
+            clarityArgs = functionArgs; // Use raw values as fallback
+          }
+          
+          const result = await (window as any).LeatherProvider.request({
+            method: 'stx_callContract',
+            params: {
+              contractAddress: contractId.split('.')[0],
+              contractName: contractId.split('.')[1],
+              functionName,
+              functionArgs: clarityArgs,
+              network: 'testnet'
+            }
+          });
+          console.log('✅ Leather native method successful:', result);
+          return result;
+        } catch (error) {
+          console.log('⚠️ Leather native method failed:', error);
+        }
+      }
+    }
+    
+    // Check why we're not using direct wallet calls
+    console.log('🔍 === SKIPPING DIRECT WALLET CALLS ===');
+    console.log('🔍 Reason: isWalletConnected =', isWalletConnected);
+    console.log('🔍 Reason: xverse.request =', !!(window as any).xverse?.request);
+    console.log('🔍 Reason: LeatherProvider.request =', !!(window as any).LeatherProvider?.request);
+    
+    // Fall back to Stacks Connect
+    console.log('🔍 === FALLING BACK TO STACKS CONNECT ===');
+    console.log('🔍 All direct wallet methods failed, using Stacks Connect');
+    console.log('🔍 User session details:', {
+      hasUserSession: !!userSession,
+      isSignedIn: userSession?.isUserSignedIn?.(),
+      hasUserData: !!(userSession as any)?.userData,
+      userData: (userSession as any)?.userData
+    });
+
+      // If we have a connected wallet but Stacks Connect is failing,
+      // try one more time with a different approach
+      if (isWalletConnected) {
+        console.log('🔍 Wallet is connected but all methods failed, trying one final approach...');
+
+        // Try to use the wallet's native methods one more time
+        if ((window as any).xverse && (window as any).xverse.request) {
+          try {
+            console.log('🔍 Final attempt with Xverse...');
+            
+            // Convert to Clarity values
+            let clarityArgs;
+            try {
+              const { uintCV, stringUtf8CV, boolCV } = await import('@stacks/transactions');
+              
+              clarityArgs = functionArgs.map(arg => {
+                // If already a Clarity value, return as-is
+                if (arg && typeof arg === 'object' && arg.type) {
+                  return arg;
+                }
+                
+                // Convert based on type
+                if (typeof arg === 'number') {
+                  return uintCV(arg);
+                } else if (typeof arg === 'string') {
+                  return stringUtf8CV(arg);
+                } else if (typeof arg === 'boolean') {
+                  return boolCV(arg);
+                }
+                
+                // Fallback to raw value
+                return arg;
+              });
+            } catch (error) {
+              console.warn('Failed to import Clarity value converters:', error);
+              clarityArgs = functionArgs; // Use raw values as fallback
+            }
+            
+            const result = await (window as any).xverse.request({
+              method: 'stx_callContract',
+              params: {
+                contractAddress: contractId.split('.')[0],
+                contractName: contractId.split('.')[1],
+                functionName,
+                functionArgs: clarityArgs,
+                network: 'testnet'
+              }
+            });
+            console.log('✅ Final Xverse attempt successful:', result);
+            return result;
+          } catch (error) {
+            console.log('⚠️ Final Xverse attempt failed:', error);
+          }
+        }
+
+        if ((window as any).LeatherProvider && (window as any).LeatherProvider.request) {
+          try {
+            console.log('🔍 Final attempt with Leather...');
+            
+            // Convert to Clarity values
+            let clarityArgs;
+            try {
+              const { uintCV, stringUtf8CV, boolCV } = await import('@stacks/transactions');
+              
+              clarityArgs = functionArgs.map(arg => {
+                // If already a Clarity value, return as-is
+                if (arg && typeof arg === 'object' && arg.type) {
+                  return arg;
+                }
+                
+                // Convert based on type
+                if (typeof arg === 'number') {
+                  return uintCV(arg);
+                } else if (typeof arg === 'string') {
+                  return stringUtf8CV(arg);
+                } else if (typeof arg === 'boolean') {
+                  return boolCV(arg);
+                }
+                
+                // Fallback to raw value
+                return arg;
+              });
+            } catch (error) {
+              console.warn('Failed to import Clarity value converters:', error);
+              clarityArgs = functionArgs; // Use raw values as fallback
+            }
+            
+            const result = await (window as any).LeatherProvider.request({
+              method: 'stx_callContract',
+              params: {
+                contractAddress: contractId.split('.')[0],
+                contractName: contractId.split('.')[1],
+                functionName,
+                functionArgs: clarityArgs,
+                network: 'testnet'
+              }
+            });
+            console.log('✅ Final Leather attempt successful:', result);
+            return result;
+          } catch (error) {
+            console.log('⚠️ Final Leather attempt failed:', error);
+          }
+        }
+      }
+
+      // Check if we have a valid userSession for Stacks Connect
+      if (!userSession) {
+        console.error('❌ No userSession available for Stacks Connect contract call');
+        throw new Error('Wallet not properly authenticated for contract calls');
+      }
+
+      if (!userSession.isUserSignedIn()) {
+        console.error('❌ UserSession not signed in for contract call');
+        throw new Error('Wallet session not authenticated for contract calls');
     }
 
     try {
       let openContractCall;
       try {
+        console.log('📦 Loading Stacks Connect...');
         const connectModule = await import('@stacks/connect');
         openContractCall = connectModule.openContractCall;
+        
+        console.log('📦 Stacks Connect loaded:', !!openContractCall);
+        console.log('📦 openContractCall type:', typeof openContractCall);
         
         if (!openContractCall || typeof openContractCall !== 'function') {
           throw new Error('openContractCall is not available or not a function');
         }
         console.log('✅ Stacks Connect loaded for contract call');
       } catch (error) {
-        console.error('Failed to import openContractCall:', error);
+        console.error('❌ Failed to import openContractCall:', error);
         throw new Error('Stacks Connect library not available for contract calls');
       }
 
       const network = await getStacksNetwork();
       console.log('🌐 Using network:', network);
 
+      // Convert to Clarity values for Stacks Connect - do it directly to avoid serialization issues
+      let clarityArgs;
+      try {
+        const { uintCV, stringUtf8CV, boolCV } = await import('@stacks/transactions');
+        
+        clarityArgs = functionArgs.map(arg => {
+          // If already a Clarity value, return as-is
+          if (arg && typeof arg === 'object' && arg.type) {
+            return arg;
+          }
+          
+          // Convert based on type
+          if (typeof arg === 'number') {
+            return uintCV(arg);
+          } else if (typeof arg === 'string') {
+            return stringUtf8CV(arg);
+          } else if (typeof arg === 'boolean') {
+            return boolCV(arg);
+          }
+          
+          // Fallback to raw value
+          return arg;
+        });
+      } catch (error) {
+        console.warn('Failed to import Clarity value converters:', error);
+        clarityArgs = functionArgs; // Use raw values as fallback
+      }
+
       return new Promise((resolve, reject) => {
         console.log('📞 Calling contract:', {
           contractAddress: contractId.split('.')[0],
           contractName: contractId.split('.')[1],
           functionName,
-          functionArgs
+          functionArgs: clarityArgs
         });
         
-        openContractCall({
-          userSession,
+        console.log('🚀 Opening contract call popup...');
+        console.log('🚀 Transaction details:', {
+          userSession: !!userSession,
           contractAddress: contractId.split('.')[0],
           contractName: contractId.split('.')[1],
           functionName,
-          functionArgs,
+          functionArgs: clarityArgs,
+          network: network,
+          appDetails: {
+            name: 'CoinQuest',
+            icon: `${window.location.origin}/favicon-32x32.png`,
+          }
+        });
+        
+        // Add a timeout to detect if popup doesn't open
+        const timeout = setTimeout(() => {
+          console.log('⏰ Contract call timeout - popup may not have opened');
+          reject(new Error('Transaction timeout - wallet popup may not have opened'));
+        }, 30000); // 30 second timeout
+        
+        console.log('🚀 === OPENING CONTRACT CALL ===');
+        console.log('🚀 Contract call parameters:', {
+          contractAddress: contractId.split('.')[0],
+          contractName: contractId.split('.')[1],
+          functionName,
+          functionArgs: clarityArgs,
+          network: network,
+          userSession: !!userSession,
+          userSessionSignedIn: userSession?.isUserSignedIn?.(),
+          appDetails: {
+            name: 'CoinQuest',
+            icon: `${window.location.origin}/favicon-32x32.png`,
+          }
+        });
+        
+        openContractCall({
+          contractAddress: contractId.split('.')[0],
+          contractName: contractId.split('.')[1],
+          functionName,
+          functionArgs: clarityArgs,
           network: network as any,
-          postConditionMode: 1,
+          userSession: userSession,
+          appDetails: {
+            name: 'CoinQuest',
+            icon: `${window.location.origin}/favicon-32x32.png`,
+          },
           onFinish: (result) => {
-            console.log('✅ Contract call successful:', result);
+            clearTimeout(timeout);
+            console.log('✅ === CONTRACT CALL SUCCESSFUL ===');
+            console.log('✅ Result:', result);
+            console.log('✅ Transaction details:', {
+              txId: result?.txId,
+              txStxAddress: (result as any)?.txStxAddress,
+              txStxAddressDetails: (result as any)?.txStxAddressDetails
+            });
             resolve(result);
           },
           onCancel: () => {
-            console.log('❌ User canceled contract transaction');
+            clearTimeout(timeout);
+            console.log('❌ === CONTRACT CALL CANCELED ===');
+            console.log('❌ This could mean:');
+            console.log('❌ 1. User clicked "Cancel" in wallet popup');
+            console.log('❌ 2. User clicked "Yes" but transaction failed');
+            console.log('❌ 3. Wallet popup closed unexpectedly');
+            console.log('❌ 4. Transaction parameters were invalid');
+            console.log('❌ Cancel details:', {
+              contractAddress: contractId.split('.')[0],
+              contractName: contractId.split('.')[1],
+              functionName,
+              functionArgs: clarityArgs,
+              network: network,
+              userSession: !!userSession,
+              userSessionSignedIn: userSession?.isUserSignedIn?.()
+            });
             reject(new Error('User canceled transaction'));
           },
         });
@@ -472,7 +1221,29 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
       console.error('❌ Contract call failed:', error);
       throw error;
     }
-  }, [userSession, getStacksNetwork]);
+  }, [userSession, getStacksNetwork, address, isConnected]);
+
+  // Comprehensive wallet connection check
+  const checkWalletConnection = useCallback(() => {
+    const hasAddress = !!address;
+    const hasUserSession = !!userSession;
+    const hasXverse = !!(window as any).xverse?.request;
+    const hasLeather = !!(window as any).LeatherProvider?.request;
+    const isStacksConnected = userSession?.isUserSignedIn?.();
+    
+    const connectionStatus = {
+      hasAddress,
+      hasUserSession,
+      hasXverse,
+      hasLeather,
+      isStacksConnected,
+      isConnected,
+      overallConnected: hasAddress && (hasUserSession || hasXverse || hasLeather)
+    };
+    
+    console.log('🔍 Comprehensive wallet check:', connectionStatus);
+    return connectionStatus;
+  }, [address, userSession, isConnected]);
 
   const getContractId = useCallback((name: string) => {
     return STACKS_CONTRACTS[name as keyof typeof STACKS_CONTRACTS] || null;
@@ -568,6 +1339,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     refreshBalance,
     callContract,
     getContractId,
+    checkWalletConnection,
   };
 
   return (
@@ -576,3 +1348,6 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     </WalletContext.Provider>
   );
 };
+
+// Add display name for React Fast Refresh
+WalletProvider.displayName = 'WalletProvider';

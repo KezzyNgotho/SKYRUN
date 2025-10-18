@@ -45,9 +45,8 @@ graph TB
     
     subgraph "Blockchain Layer"
         E[Stacks Network] --> F[Smart Contracts]
-        F --> G[GameToken Contract]
-        F --> H[QuestReward Contract]
-        F --> I[PlayerProfile Contract]
+        F --> G[CoinQuestToken Contract]
+        F --> H[CoinQuestGame Contract]
     end
     
     subgraph "Wallet Integration"
@@ -234,6 +233,94 @@ coinQuest-react/
    - Click "Connect Wallet" in the game
    - Authorize the connection
    - Start playing!
+
+### 🎯 Smart Contracts (Already Deployed!)
+
+**✅ Live on Stacks Testnet:**
+- **CoinQuestToken**: `ST18YM565C2RG5W8DFDT5W577YMG5QSAKVRG0MGV1.CoinQuestToken`
+- **CoinQuestGame**: `ST18YM565C2RG5W8DFDT5W577YMG5QSAKVRG0MGV1.CoinQuestGame`
+
+**🔍 View on Explorer:**
+- [Hiro Explorer - Testnet](https://explorer.stacks.co/?chain=testnet)
+- Search for: `ST18YM565C2RG5W8DFDT5W577YMG5QSAKVRG0MGV1`
+
+**🧪 Test Contract Functions:**
+```bash
+# Start Clarinet console
+clarinet console
+
+# Test token info
+(contract-call? .CoinQuestToken get_token_info)
+
+# Initialize game contract
+(contract-call? .CoinQuestGame initialize_with_game_token)
+
+# Submit a game score
+(contract-call? .CoinQuestGame submit_game_score u150)
+
+# Check user stats
+(contract-call? .CoinQuestGame get_user_stats 'ST18YM565C2RG5W8DFDT5W577YMG5QSAKVRG0MGV1)
+```
+
+---
+
+## 📋 Smart Contract Documentation
+
+### Contract Architecture
+
+Our simplified architecture uses **2 core contracts** instead of multiple complex contracts:
+
+#### 1. **CoinQuestToken** (`CoinQuestToken.clar`)
+**Purpose**: ERC20-like token for in-game currency
+
+**Key Functions:**
+- `transfer(amount, recipient)` - Transfer tokens between users
+- `mint(recipient, amount)` - Mint new tokens (game contract only)
+- `approve(spender, amount)` - Approve token spending
+- `get_balance(owner)` - Get user token balance
+- `get_total_supply()` - Get total token supply
+
+#### 2. **CoinQuestGame** (`CoinQuestGame.clar`)
+**Purpose**: Main game logic, quests, and rewards
+
+**Key Functions:**
+- `submit_game_score(score)` - Submit score and earn tokens
+- `claim_quest_reward(quest_id)` - Claim completed quest rewards
+- `buy_lifeline()` - Purchase extra lives with tokens
+- `get_user_stats(user)` - Get player statistics
+- `get_quest(quest_id)` - Get quest details
+- `initialize_with_game_token()` - Initialize contract integration
+
+### Contract Integration Flow
+
+```mermaid
+sequenceDiagram
+    participant P as Player
+    participant G as Game Contract
+    participant T as Token Contract
+    participant B as Blockchain
+    
+    P->>G: submit_game_score(150)
+    G->>G: Calculate tokens earned
+    G->>T: mint(player, tokens)
+    T->>B: Update balances
+    B->>G: Success
+    G->>P: Score recorded + tokens earned
+    
+    P->>G: claim_quest_reward(1)
+    G->>G: Check quest completion
+    G->>T: mint(player, reward)
+    T->>B: Update balances
+    B->>G: Success
+    G->>P: Reward claimed
+```
+
+### Contract Addresses
+
+| Contract | Address | Purpose |
+|----------|---------|---------|
+| **CoinQuestToken** | `ST18YM565C2RG5W8DFDT5W577YMG5QSAKVRG0MGV1.CoinQuestToken` | Token management |
+| **CoinQuestGame** | `ST18YM565C2RG5W8DFDT5W577YMG5QSAKVRG0MGV1.CoinQuestGame` | Game logic & quests |
 
 ---
 
