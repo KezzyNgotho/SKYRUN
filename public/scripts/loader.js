@@ -60,7 +60,13 @@ const CollectSprites  = [];
 CollectSprites.push(loader.addImage('assets/sprites/collect/shield.png'));
 CollectSprites.push(loader.addImage('assets/sprites/collect/shieldIcon.png'));
 CollectSprites.push(loader.addImage('assets/sprites/collect/boosterIcon.png'));
-CollectSprites.push(loader.addImage('assets/sprites/collect/coin.png'))
+CollectSprites.push(loader.addImage('assets/sprites/collect/coin.png'));
+// New power-up sprites
+CollectSprites.push(loader.addImage('assets/sprites/collect/magnet.png'));
+CollectSprites.push(loader.addImage('assets/sprites/collect/doublescores.png')); // Note: using 'doublescores' as per your file
+CollectSprites.push(loader.addImage('assets/sprites/collect/invincibility.png'));
+CollectSprites.push(loader.addImage('assets/sprites/collect/slowmotion.png'));
+CollectSprites.push(loader.addImage('assets/sprites/collect/coinrain.png'));
 
 var audioArr = []
 

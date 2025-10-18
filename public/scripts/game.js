@@ -684,6 +684,82 @@ const contractABI = [
 
 console.log("Stacks mode active; EVM features disabled.");
 
+// Debug: Check if particle systems are loaded
+console.log('🔍 Particle Manager:', typeof window.particleManager);
+console.log('🔍 Screen Shake:', typeof window.screenShake);
+console.log('🔍 Power-Up Manager:', typeof window.powerUpManager);
+
+// Debug: Check if power-up sprites are loaded
+console.log('🔍 CollectSprites array length:', CollectSprites.length);
+console.log('🔍 Power-up sprites:', {
+  magnet: CollectSprites[4] ? '✅ Loaded' : '❌ Missing',
+  doubleScore: CollectSprites[5] ? '✅ Loaded' : '❌ Missing', 
+  invincibility: CollectSprites[6] ? '✅ Loaded' : '❌ Missing',
+  slowMotion: CollectSprites[7] ? '✅ Loaded' : '❌ Missing',
+  coinRain: CollectSprites[8] ? '✅ Loaded' : '❌ Missing'
+});
+
+// Debug: Check if dynamic background manager is loaded
+console.log('🔍 Dynamic Background Manager:', typeof window.dynamicBackgroundManager);
+if (window.dynamicBackgroundManager) {
+  window.dynamicBackgroundManager.init();
+}
+
+// Test function to manually trigger effects
+window.testEffects = function() {
+  console.log('🧪 Testing effects...');
+  if (window.particleManager) {
+    window.particleManager.addDamageParticles(player.x, player.y, 10);
+    console.log('💥 Test damage particles added');
+  }
+  if (window.screenShake) {
+    window.screenShake.start(25, 0.8);
+    console.log('📳 Test screen shake started');
+  }
+};
+
+// Test function to manually trigger power-ups
+window.testPowerUps = function(powerUpType = 'magnet') {
+  console.log('🧪 Testing power-up:', powerUpType);
+  if (window.powerUpManager) {
+    window.powerUpManager.activate(powerUpType);
+    console.log('🎁 Power-up activated:', powerUpType);
+  } else {
+    console.log('❌ Power-up manager not available');
+  }
+};
+
+// Test all power-ups
+window.testAllPowerUps = function() {
+  const powerUps = ['magnet', 'doubleScore', 'invincibility', 'slowMotion', 'coinRain'];
+  powerUps.forEach((powerUp, index) => {
+    setTimeout(() => {
+      window.testPowerUps(powerUp);
+    }, index * 2000); // Activate each power-up 2 seconds apart
+  });
+};
+
+// Test dynamic backgrounds
+window.testBackgrounds = function(themeName = 'sunset') {
+  console.log('🧪 Testing background theme:', themeName);
+  if (window.dynamicBackgroundManager) {
+    window.dynamicBackgroundManager.forceTheme(themeName);
+    console.log('🌅 Background theme changed to:', themeName);
+  } else {
+    console.log('❌ Dynamic background manager not available');
+  }
+};
+
+// Test all background themes
+window.testAllBackgrounds = function() {
+  const themes = ['day', 'sunset', 'night', 'storm', 'space'];
+  themes.forEach((theme, index) => {
+    setTimeout(() => {
+      window.testBackgrounds(theme);
+    }, index * 3000); // Change theme every 3 seconds
+  });
+};
+
 // Function to finalize game score
 async function finalizeGameScore() {
   console.log('🎮 === FINALIZE GAME SCORE CALLED ===');
@@ -946,7 +1022,13 @@ class GameObject {
         this.x -= this.randDist;
         this.y -= speed * 2;
       } else {
-        this.x -= speed;
+        // Special handling for coin rain objects
+        if (this.rainFall) {
+          this.x -= this.rainSpeed || speed;
+          this.y += this.rainSpeed || speed;
+        } else {
+          this.x -= speed;
+        }
       }
     }
   }
@@ -963,6 +1045,13 @@ class GameObject {
       3.5 /
       (object.image.naturalWidth / object.image.naturalHeight);
     var hit = false;
+
+    // Debug collision detection
+    if (object.isCoin || object.isShield || object.isBooster) {
+      // Skip debug for collectibles
+    } else {
+      console.log('🔍 Checking collision with obstacle at', object.x, object.y);
+    }
 
     if (object.topBarrier) {
       if (
@@ -1007,23 +1096,83 @@ class GameObject {
             if (object.isShield) {
               player.shield = true;
               activeTime = shieldLevel * 82;
-
+              // Add power-up particles
+              if (window.particleManager) {
+                window.particleManager.addPowerupParticles(object.x, object.y, 8);
+              }
               object.image = new Image();
             }
             if (object.isBooster) {
               player.boost = true;
               activeTime = boosterLevel * 82;
+              // Add power-up particles
+              if (window.particleManager) {
+                window.particleManager.addPowerupParticles(object.x, object.y, 8);
+              }
               object.image = new Image();
             }
+            
+            // New power-up collection logic
+            if (object.isMagnet || object.isDoubleScore || object.isInvincibility || 
+                object.isSlowMotion || object.isCoinRain) {
+              
+              // Activate the power-up
+              if (window.powerUpManager && object.powerUpType) {
+                window.powerUpManager.activate(object.powerUpType);
+              }
+              
+              // Add power-up particles
+              if (window.particleManager) {
+                window.particleManager.addPowerupParticles(object.x, object.y, 10);
+              }
+              
+              // Remove the power-up object
+              object.image = new Image();
+            }
+            
             if (object.isCoin) {
               if (!object.kicked) {
                 coins += 1;
+                // Add coin collection particles
+                if (window.particleManager) {
+                  window.particleManager.addCoinParticles(object.x, object.y, 5);
+                  window.particleManager.addSparkleParticles(object.x, object.y, 3);
+                }
               }
               object.kicked = true;
               console.log(coins);
             }
-            if (!object.isBooster && !object.isShield && !object.isCoin)
+            
+            // Magnet effect - attract nearby coins
+            if (window.powerUpManager && window.powerUpManager.isMagnetActive()) {
+              // Find nearby coins and attract them
+              for (let j = 0; j < objects.length; j++) {
+                const nearbyObject = objects[j];
+                if (nearbyObject.isCoin && !nearbyObject.kicked) {
+                  const distance = Math.sqrt(
+                    Math.pow(nearbyObject.x - player.x, 2) + 
+                    Math.pow(nearbyObject.y - player.y, 2)
+                  );
+                  
+                  // If coin is within magnet range (150 pixels)
+                  if (distance < 150) {
+                    // Move coin towards player
+                    const magnetForce = 0.3;
+                    nearbyObject.x += (player.x - nearbyObject.x) * magnetForce;
+                    nearbyObject.y += (player.y - nearbyObject.y) * magnetForce;
+                    
+                    // Add magnetic effect particles
+                    if (window.particleManager && Math.random() < 0.1) {
+                      window.particleManager.addSparkleParticles(nearbyObject.x, nearbyObject.y, 2);
+                    }
+                  }
+                }
+              }
+            }
+            if (!object.isBooster && !object.isShield && !object.isCoin) {
               hit = true;
+              console.log('💥 HIT DETECTED! Obstacle collision at', object.x, object.y);
+            }
           }
         }
       }
@@ -1445,7 +1594,14 @@ function UpdateBg(index, arr = bg) {
 }
 
 function showScoreAndCoins() {
-  score += 0.12;
+  let scoreIncrease = 0.12;
+  
+  // Apply power-up multipliers
+  if (window.powerUpManager) {
+    scoreIncrease *= window.powerUpManager.getScoreMultiplier();
+  }
+  
+  score += scoreIncrease;
   scoreBlock.innerText =
     "0".repeat(4 - String(score.toFixed(0).length)) + String(score.toFixed(0));
   coinsText.innerText = "0".repeat(3 - String(coins).length) + coins;
@@ -1577,6 +1733,48 @@ function Update() {
                     ? canvas.height - wrapperBlock.offsetHeight / 2.5
                     : canvas.height - wrapperBlock.offsetHeight / 1.3;
               }
+              
+              // Spawn new power-ups (lower chance)
+              const powerUpChance = RandomInteger(0, 100);
+              if (powerUpChance > 85) { // 15% chance for new power-ups
+                const powerUpType = RandomInteger(1, 5);
+                switch(powerUpType) {
+                  case 1: // Magnet
+                    objects.at(-1).image = CollectSprites[4]; // magnet.png
+                    objects.at(-1).isMagnet = true;
+                    objects.at(-1).sizeCoef = 0.4;
+                    objects.at(-1).powerUpType = 'magnet';
+                    break;
+                  case 2: // Double Score
+                    objects.at(-1).image = CollectSprites[5]; // doublescores.png
+                    objects.at(-1).isDoubleScore = true;
+                    objects.at(-1).sizeCoef = 0.4;
+                    objects.at(-1).powerUpType = 'doubleScore';
+                    break;
+                  case 3: // Invincibility
+                    objects.at(-1).image = CollectSprites[6]; // invincibility.png
+                    objects.at(-1).isInvincibility = true;
+                    objects.at(-1).sizeCoef = 0.4;
+                    objects.at(-1).powerUpType = 'invincibility';
+                    break;
+                  case 4: // Slow Motion
+                    objects.at(-1).image = CollectSprites[7]; // slowmotion.png
+                    objects.at(-1).isSlowMotion = true;
+                    objects.at(-1).sizeCoef = 0.4;
+                    objects.at(-1).powerUpType = 'slowMotion';
+                    break;
+                  case 5: // Coin Rain
+                    objects.at(-1).image = CollectSprites[8]; // coinrain.png
+                    objects.at(-1).isCoinRain = true;
+                    objects.at(-1).sizeCoef = 0.4;
+                    objects.at(-1).powerUpType = 'coinRain';
+                    break;
+                }
+                objects.at(-1).y =
+                  RandomInteger(0, 1) == 1
+                    ? canvas.height - wrapperBlock.offsetHeight / 2.5
+                    : canvas.height - wrapperBlock.offsetHeight / 1.3;
+              }
               break;
             }
         }
@@ -1607,8 +1805,48 @@ function Update() {
       hit = player.Collide(objects[i]);
 
       if (hit) {
-        player.dead = true;
+        // Check if player is invincible
+        if (window.powerUpManager && window.powerUpManager.isInvincible()) {
+          console.log('💎 Player is invincible! No damage taken.');
+          // Still add visual effects but don't die
+          if (window.particleManager) {
+            window.particleManager.addSparkleParticles(player.x, player.y, 6);
+          }
+        } else {
+          console.log('🎯 Player hit obstacle! Adding effects...');
+          // Add damage particles at player position
+          if (window.particleManager) {
+            window.particleManager.addDamageParticles(player.x, player.y, 8);
+            console.log('💥 Damage particles added');
+          }
+          // Add screen shake
+          if (window.screenShake) {
+            window.screenShake.start(20, 0.5);
+            console.log('📳 Screen shake started');
+          }
+          player.dead = true;
+        }
       }
+    }
+
+    // Update particles
+    if (window.particleManager) {
+      window.particleManager.update();
+    }
+    
+    // Update screen shake
+    if (window.screenShake) {
+      window.screenShake.update(1/60); // Assuming 60 FPS
+    }
+    
+    // Update power-ups
+    if (window.powerUpManager) {
+      window.powerUpManager.update();
+    }
+    
+    // Update dynamic backgrounds
+    if (window.dynamicBackgroundManager) {
+      window.dynamicBackgroundManager.update(score, Date.now());
     }
 
     player.Update();
@@ -1632,6 +1870,16 @@ function Draw() {
   ctx.imageSmoothingQuality = "high";
   ctx.imageSmoothingEnabled = true;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+  
+  // Apply screen shake offset
+  let shakeOffset = { x: 0, y: 0 };
+  if (window.screenShake) {
+    shakeOffset = window.screenShake.getOffset();
+  }
+  
+  ctx.save();
+  ctx.translate(shakeOffset.x, shakeOffset.y);
+  
   for (var i = 0; i < bg.length; i += 1) {
     bg[i].image.addEventListener(
       "load",
@@ -1654,6 +1902,17 @@ function Draw() {
   }
   ctx.imageSmoothingEnabled = false;
   DrawObject(player);
+  
+  // Draw particles
+  if (window.particleManager) {
+    window.particleManager.draw(ctx);
+  }
+  
+  // Draw power-up indicators
+  if (window.powerUpManager) {
+    window.powerUpManager.draw(ctx);
+  }
+  
   if (player.boost) {
     if (player.boostTimer == 0) {
       clearInterval(playerAnimate);
@@ -1961,6 +2220,9 @@ function Draw() {
       DrawObject(CollectObjects[0]);
     }
   }
+  
+  // Restore canvas context after screen shake
+  ctx.restore();
 }
 function DrawObject(object) {
   var playerWidth =
