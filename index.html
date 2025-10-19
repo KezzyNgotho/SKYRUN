@@ -468,6 +468,72 @@
   </main>
 
   <!-- Legacy vanilla scripts from public/scripts -->
+  <script>
+    // Prevent script loading conflicts
+    if (typeof window.scriptLoaded === 'undefined') {
+      window.scriptLoaded = {};
+    }
+    
+    // Enhanced error handling for external script conflicts
+    window.addEventListener('error', function(e) {
+      // Handle external script conflicts (browser extensions)
+      if (e.message.includes('observer') && e.filename.includes('content.js')) {
+        console.warn('🔧 External script conflict detected (browser extension):', e.message);
+        console.warn('💡 This is likely caused by a browser extension. Your game should still work normally.');
+        e.preventDefault();
+        return false;
+      }
+      
+      // Handle other external script conflicts
+      if (e.filename && (e.filename.includes('extension') || e.filename.includes('content_script'))) {
+        console.warn('🔧 Browser extension script error:', e.message);
+        e.preventDefault();
+        return false;
+      }
+      
+      // Log other errors for debugging but don't prevent them
+      if (e.filename && !e.filename.includes(window.location.hostname)) {
+        console.warn('⚠️ External script error:', e.message, 'from', e.filename);
+      }
+    });
+    
+    // Script isolation to prevent conflicts
+    (function() {
+      'use strict';
+      
+      // Store original console methods
+      const originalConsoleError = console.error;
+      const originalConsoleWarn = console.warn;
+      
+      // Override console.error to filter external script errors
+      console.error = function(...args) {
+        const message = args.join(' ');
+        if (message.includes('observer') && message.includes('content.js')) {
+          console.warn('🔧 Filtered external script error:', message);
+          return;
+        }
+        originalConsoleError.apply(console, args);
+      };
+      
+      // Override console.warn to filter external script warnings
+      console.warn = function(...args) {
+        const message = args.join(' ');
+        if (message.includes('observer') && message.includes('content.js')) {
+          return; // Suppress these warnings
+        }
+        originalConsoleWarn.apply(console, args);
+      };
+    })();
+    
+    // User-friendly notification about browser extensions
+    setTimeout(() => {
+      if (window.location.protocol === 'file:' || window.location.hostname === 'localhost') {
+        console.log('🎮 CoinQuest Game Loaded Successfully!');
+        console.log('💡 If you see any "observer" errors above, they are from browser extensions and won\'t affect your game.');
+        console.log('🔧 To disable these errors, try running the game in incognito mode or disable browser extensions.');
+      }
+    }, 2000);
+  </script>
   <script src="/scripts/howler.core.js"></script>
   <script src="/scripts/PxLoader.js"></script>
   <script src="/scripts/PxLoaderImage.js"></script>

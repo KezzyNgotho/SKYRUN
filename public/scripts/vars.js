@@ -1,7 +1,41 @@
-var canvas = document.getElementById("canvas");
-var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-var ctx = canvas.getContext("2d");
-var wrapperBlock = document.getElementsByClassName("wrapper")[0];
+// Wait for DOM to be ready before initializing canvas-dependent variables
+function initializeCanvasVariables() {
+  var canvas = document.getElementById("canvas");
+  if (!canvas) {
+    console.error("Canvas element not found!");
+    return false;
+  }
+  
+  var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  var ctx = canvas.getContext("2d");
+  var wrapperBlock = document.getElementsByClassName("wrapper")[0];
+  
+  // Make these variables globally accessible
+  window.canvas = canvas;
+  window.audioCtx = audioCtx;
+  window.ctx = ctx;
+  window.wrapperBlock = wrapperBlock;
+  
+  // Call Resize after canvas is ready
+  if (typeof Resize === 'function') {
+    Resize();
+  }
+  
+  return true;
+}
+
+// Initialize immediately if DOM is ready, otherwise wait for DOMContentLoaded
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initializeCanvasVariables);
+} else {
+  initializeCanvasVariables();
+}
+
+// Keep the original variable declarations for backward compatibility
+var canvas = window.canvas;
+var audioCtx = window.audioCtx;
+var ctx = window.ctx;
+var wrapperBlock = window.wrapperBlock;
 
 var creditsBlock = document.getElementsByClassName("credits")[0];
 var storeBlock = document.getElementsByClassName("store")[0];

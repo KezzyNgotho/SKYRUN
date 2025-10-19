@@ -11,6 +11,217 @@ Resize();
 updateAchives();
 updateUpgrades();
 
+// Define GameObject class early to avoid initialization issues
+class GameObject {
+  constructor(image, x, y, isPlayer) {
+    this.x = x;
+    this.y = y;
+    this.slideing = false;
+    this.dead = false;
+    this.isPlayer = isPlayer;
+    this.image = image;
+    this.speed = speed;
+
+    this.isShield = false;
+    this.isBooster = false;
+    this.randDist = RandomInteger(-speed * 2, speed * 2);
+    this.shieldTimer = 0;
+    this.shield = false;
+    this.boost = false;
+    this.boostTimer = 0;
+
+    this.topBarrier = false;
+    this.levitateCount = 0;
+    this.sizeCoef = 1;
+    this.levitateHeight = 0;
+    this.isLevitate = false;
+    this.rise = false;
+  }
+  Update() {
+    var barrierWidth =
+      (canvas.height / 5) * (this.image.width / this.image.height);
+
+    if (!this.isPlayer) {
+      if (this.isLevitate) {
+        this.levitateCount += 0.025;
+        this.levitateHeight =
+          (canvas.height / 50) * Math.sin(Math.PI * this.levitateCount);
+        this.y += this.levitateHeight;
+      }
+
+      if (
+        (((!this.topBarrier && this.x < -1.5 * barrierWidth) ||
+          (this.topBarrier && this.x < -5 * barrierWidth) ||
+          this.y < -500) &&
+          !this.kicked) ||
+        (this.kicked && this.x <= -5 * canvas.width) ||
+        (this.kicked && this.y <= -5 * canvas.height)
+      ) {
+        this.dead = true;
+      }
+      if (this.kicked) {
+        this.x -= this.randDist;
+        this.y -= speed * 2;
+      } else {
+        // Special handling for coin rain objects
+        if (this.rainFall) {
+          this.x -= this.rainSpeed || speed;
+          this.y += this.rainSpeed || speed;
+        } else {
+          this.x -= speed;
+        }
+      }
+    }
+  }
+  Collide(object) {
+    var playerWidth =
+      (canvas.height / 5) *
+      (player.image.naturalWidth / player.image.naturalHeight);
+    var playerHeight =
+      (canvas.height / 5) *
+      (player.image.naturalWidth / player.image.naturalHeight);
+    var barrierWidth = canvas.height / 3.5;
+    var barrierHight =
+      canvas.height /
+      3.5 /
+      (object.image.naturalWidth / object.image.naturalHeight);
+    var hit = false;
+
+    // Debug collision detection
+    if (object.isCoin || object.isShield || object.isBooster) {
+      // Skip debug for collectibles
+    } else {
+      console.log('🔍 Checking collision with obstacle at', object.x, object.y);
+    }
+
+    if (object.topBarrier) {
+      if (
+        this.x + playerWidth / 2.5 > object.x &&
+        this.x < object.x + (barrierWidth * object.sizeCoef) / 1.2
+      ) {
+        if (this.y - jumpHeight + playerHeight / 1.2 > object.y) {
+          var actualPlayerHigh = this.slideing
+            ? this.y + playerHeight / 2.2
+            : this.y;
+          if (
+            actualPlayerHigh * 1.1 - jumpHeight <
+            object.y + barrierHight * object.sizeCoef
+          ) {
+            if (player.shield) {
+              object.kicked = true;
+            } else {
+              hit = true;
+            }
+          }
+        }
+      }
+    } else {
+      if (
+        this.x + playerWidth / 1.5 > object.x &&
+        this.x < object.x + barrierWidth / 1.5
+      ) {
+        if (
+          this.y - jumpHeight + playerHeight > object.y * 1.1 &&
+          this.y - jumpHeight < object.y + barrierHight * object.sizeCoef
+        ) {
+          if (player.shield) {
+            if (object.isCoin) {
+              if (!object.kicked) {
+                coins += 1;
+              }
+              object.kicked = true;
+            } else {
+              object.kicked = true;
+            }
+          } else {
+            if (object.isShield) {
+              player.shield = true;
+              activeTime = shieldLevel * 82;
+              // Add power-up particles
+              if (window.particleManager) {
+                window.particleManager.addPowerupParticles(object.x, object.y, 8);
+              }
+              object.image = new Image();
+            }
+            if (object.isBooster) {
+              player.boost = true;
+              activeTime = boosterLevel * 82;
+              // Add power-up particles
+              if (window.particleManager) {
+                window.particleManager.addPowerupParticles(object.x, object.y, 8);
+              }
+              object.image = new Image();
+            }
+            
+            // New power-up collection logic
+            if (object.isMagnet || object.isDoubleScore || object.isInvincibility || 
+                object.isSlowMotion || object.isCoinRain) {
+              
+              // Activate the power-up
+              if (window.powerUpManager && object.powerUpType) {
+                window.powerUpManager.activate(object.powerUpType);
+              }
+              
+              // Add power-up particles
+              if (window.particleManager) {
+                window.particleManager.addPowerupParticles(object.x, object.y, 10);
+              }
+              
+              // Remove the power-up object
+              object.image = new Image();
+            }
+            
+            if (object.isCoin) {
+              if (!object.kicked) {
+                coins += 1;
+                // Add coin collection particles
+                if (window.particleManager) {
+                  window.particleManager.addCoinParticles(object.x, object.y, 5);
+                  window.particleManager.addSparkleParticles(object.x, object.y, 3);
+                }
+              }
+              object.kicked = true;
+              console.log(coins);
+            }
+            
+            // Magnet effect - attract nearby coins
+            if (window.powerUpManager && window.powerUpManager.isMagnetActive()) {
+              // Find nearby coins and attract them
+              for (let j = 0; j < objects.length; j++) {
+                const nearbyObject = objects[j];
+                if (nearbyObject.isCoin && !nearbyObject.kicked) {
+                  const distance = Math.sqrt(
+                    Math.pow(nearbyObject.x - player.x, 2) + 
+                    Math.pow(nearbyObject.y - player.y, 2)
+                  );
+                  
+                  // If coin is within magnet range (150 pixels)
+                  if (distance < 150) {
+                    // Move coin towards player
+                    const magnetForce = 0.3;
+                    nearbyObject.x += (player.x - nearbyObject.x) * magnetForce;
+                    nearbyObject.y += (player.y - nearbyObject.y) * magnetForce;
+                    
+                    // Add magnetic effect particles
+                    if (window.particleManager && Math.random() < 0.1) {
+                      window.particleManager.addSparkleParticles(nearbyObject.x, nearbyObject.y, 2);
+                    }
+                  }
+                }
+              }
+            }
+            if (!object.isBooster && !object.isShield && !object.isCoin) {
+              hit = true;
+              console.log('💥 HIT DETECTED! Obstacle collision at', object.x, object.y);
+            }
+          }
+        }
+      }
+    }
+    return hit;
+  }
+}
+
 const contractAddress = "0x784675590f1f072520dd0470840fA5CF256200D8";
 const contractABI = [
   {
@@ -972,224 +1183,52 @@ class Bg {
     }
   }
 }
-class GameObject {
-  constructor(image, x, y, isPlayer) {
-    this.x = x;
-    this.y = y;
-    this.slideing = false;
-    this.dead = false;
-    this.isPlayer = isPlayer;
-    this.image = image;
-    this.speed = speed;
 
-    this.isShield = false;
-    this.isBooster = false;
-    this.randDist = RandomInteger(-speed * 2, speed * 2);
-    this.shieldTimer = 0;
-    this.shield = false;
-    this.boost = false;
-    this.boostTimer = 0;
-
-    this.topBarrier = false;
-    this.levitateCount = 0;
-    this.sizeCoef = 1;
-    this.levitateHeight = 0;
-    this.isLevitate = false;
+// Initialize player object when canvas is ready
+function initializePlayer() {
+  if (!window.canvas || !window.wrapperBlock) {
+    console.error("Canvas or wrapperBlock not ready for player initialization");
+    return false;
   }
-  Update() {
-    var barrierWidth =
-      (canvas.height / 5) * (this.image.width / this.image.height);
-
-    if (!this.isPlayer) {
-      if (this.isLevitate) {
-        this.levitateCount += 0.025;
-        this.levitateHeight =
-          (canvas.height / 50) * Math.sin(Math.PI * this.levitateCount);
-        this.y += this.levitateHeight;
-      }
-
-      if (
-        (((!this.topBarrier && this.x < -1.5 * barrierWidth) ||
-          (this.topBarrier && this.x < -5 * barrierWidth) ||
-          this.y < -500) &&
-          !this.kicked) ||
-        (this.kicked && this.x <= -5 * canvas.width) ||
-        (this.kicked && this.y <= -5 * canvas.height)
-      ) {
-        this.dead = true;
-      }
-      if (this.kicked) {
-        this.x -= this.randDist;
-        this.y -= speed * 2;
-      } else {
-        // Special handling for coin rain objects
-        if (this.rainFall) {
-          this.x -= this.rainSpeed || speed;
-          this.y += this.rainSpeed || speed;
-        } else {
-          this.x -= speed;
-        }
-      }
-    }
+  
+  // Check if GameObject class is defined
+  if (typeof GameObject === 'undefined') {
+    console.error("GameObject class not yet defined, deferring player initialization");
+    // Try again after a short delay
+    setTimeout(initializePlayer, 100);
+    return false;
   }
-  Collide(object) {
-    var playerWidth =
-      (canvas.height / 5) *
-      (player.image.naturalWidth / player.image.naturalHeight);
-    var playerHeight =
-      (canvas.height / 5) *
-      (player.image.naturalWidth / player.image.naturalHeight);
-    var barrierWidth = canvas.height / 3.5;
-    var barrierHight =
-      canvas.height /
-      3.5 /
-      (object.image.naturalWidth / object.image.naturalHeight);
-    var hit = false;
-
-    // Debug collision detection
-    if (object.isCoin || object.isShield || object.isBooster) {
-      // Skip debug for collectibles
-    } else {
-      console.log('🔍 Checking collision with obstacle at', object.x, object.y);
-    }
-
-    if (object.topBarrier) {
-      if (
-        this.x + playerWidth / 2.5 > object.x &&
-        this.x < object.x + (barrierWidth * object.sizeCoef) / 1.2
-      ) {
-        if (this.y - jumpHeight + playerHeight / 1.2 > object.y) {
-          var actualPlayerHigh = this.slideing
-            ? this.y + playerHeight / 2.2
-            : this.y;
-          if (
-            actualPlayerHigh * 1.1 - jumpHeight <
-            object.y + barrierHight * object.sizeCoef
-          ) {
-            if (player.shield) {
-              object.kicked = true;
-            } else {
-              hit = true;
-            }
-          }
-        }
-      }
-    } else {
-      if (
-        this.x + playerWidth / 1.5 > object.x &&
-        this.x < object.x + barrierWidth / 1.5
-      ) {
-        if (
-          this.y - jumpHeight + playerHeight > object.y * 1.1 &&
-          this.y - jumpHeight < object.y + barrierHight * object.sizeCoef
-        ) {
-          if (player.shield) {
-            if (object.isCoin) {
-              if (!object.kicked) {
-                coins += 1;
-              }
-              object.kicked = true;
-            } else {
-              object.kicked = true;
-            }
-          } else {
-            if (object.isShield) {
-              player.shield = true;
-              activeTime = shieldLevel * 82;
-              // Add power-up particles
-              if (window.particleManager) {
-                window.particleManager.addPowerupParticles(object.x, object.y, 8);
-              }
-              object.image = new Image();
-            }
-            if (object.isBooster) {
-              player.boost = true;
-              activeTime = boosterLevel * 82;
-              // Add power-up particles
-              if (window.particleManager) {
-                window.particleManager.addPowerupParticles(object.x, object.y, 8);
-              }
-              object.image = new Image();
-            }
-            
-            // New power-up collection logic
-            if (object.isMagnet || object.isDoubleScore || object.isInvincibility || 
-                object.isSlowMotion || object.isCoinRain) {
-              
-              // Activate the power-up
-              if (window.powerUpManager && object.powerUpType) {
-                window.powerUpManager.activate(object.powerUpType);
-              }
-              
-              // Add power-up particles
-              if (window.particleManager) {
-                window.particleManager.addPowerupParticles(object.x, object.y, 10);
-              }
-              
-              // Remove the power-up object
-              object.image = new Image();
-            }
-            
-            if (object.isCoin) {
-              if (!object.kicked) {
-                coins += 1;
-                // Add coin collection particles
-                if (window.particleManager) {
-                  window.particleManager.addCoinParticles(object.x, object.y, 5);
-                  window.particleManager.addSparkleParticles(object.x, object.y, 3);
-                }
-              }
-              object.kicked = true;
-              console.log(coins);
-            }
-            
-            // Magnet effect - attract nearby coins
-            if (window.powerUpManager && window.powerUpManager.isMagnetActive()) {
-              // Find nearby coins and attract them
-              for (let j = 0; j < objects.length; j++) {
-                const nearbyObject = objects[j];
-                if (nearbyObject.isCoin && !nearbyObject.kicked) {
-                  const distance = Math.sqrt(
-                    Math.pow(nearbyObject.x - player.x, 2) + 
-                    Math.pow(nearbyObject.y - player.y, 2)
-                  );
-                  
-                  // If coin is within magnet range (150 pixels)
-                  if (distance < 150) {
-                    // Move coin towards player
-                    const magnetForce = 0.3;
-                    nearbyObject.x += (player.x - nearbyObject.x) * magnetForce;
-                    nearbyObject.y += (player.y - nearbyObject.y) * magnetForce;
-                    
-                    // Add magnetic effect particles
-                    if (window.particleManager && Math.random() < 0.1) {
-                      window.particleManager.addSparkleParticles(nearbyObject.x, nearbyObject.y, 2);
-                    }
-                  }
-                }
-              }
-            }
-            if (!object.isBooster && !object.isShield && !object.isCoin) {
-              hit = true;
-              console.log('💥 HIT DETECTED! Obstacle collision at', object.x, object.y);
-            }
-          }
-        }
-      }
-    }
-    return hit;
-  }
+  
+  player = new GameObject(
+    runSprites[0],
+    0.2 * canvas.width,
+    canvas.height - wrapperBlock.offsetHeight / 2.5,
+    true
+  );
+  
+  return true;
 }
 
-var player = new GameObject(
-  runSprites[0],
-  0.2 * canvas.width,
-  canvas.height - wrapperBlock.offsetHeight / 2.5,
-  true
-);
+// Initialize player immediately if canvas is ready, otherwise wait
+if (window.canvas) {
+  initializePlayer();
+} else {
+  // Wait for canvas to be initialized
+  document.addEventListener('DOMContentLoaded', function() {
+    if (window.canvas) {
+      initializePlayer();
+    }
+  });
+}
 
 var objects = [];
 function animate(object, spritesArr) {
+  // Check if object and sprites array are valid
+  if (!object || !spritesArr || spritesArr.length === 0) {
+    console.log("Cannot animate: object or sprites array not ready");
+    return;
+  }
+  
   frameNumber += 1;
   if (frameNumber > spritesArr.length - 1) {
     frameNumber = 1;
@@ -1197,9 +1236,38 @@ function animate(object, spritesArr) {
   object.image = spritesArr[frameNumber];
 }
 
-var playerAnimate = setInterval(() => {
-  animate(player, runSprites);
-}, 75);
+// Initialize player animation when sprites are ready
+function initializePlayerAnimation() {
+  if (player && runSprites && runSprites.length > 0) {
+    // Clear any existing interval
+    if (window.playerAnimateInterval) {
+      clearInterval(window.playerAnimateInterval);
+    }
+    
+    window.playerAnimateInterval = setInterval(() => {
+      animate(player, runSprites);
+    }, 75);
+    
+    console.log("Player animation initialized");
+    return true;
+  }
+  return false;
+}
+
+// Try to initialize player animation immediately, or defer if not ready
+if (typeof runSprites !== 'undefined' && runSprites.length > 0 && player) {
+  initializePlayerAnimation();
+} else {
+  // Set up a retry mechanism
+  const retryPlayerAnimation = () => {
+    if (initializePlayerAnimation()) {
+      console.log("Player animation started successfully");
+    } else {
+      setTimeout(retryPlayerAnimation, 100);
+    }
+  };
+  setTimeout(retryPlayerAnimation, 100);
+}
 
 function Move() {
   if (rightPressed && player.x + canvas.width / 10 < canvas.width) {
@@ -1224,37 +1292,85 @@ function Move() {
     jumpHeight = 0;
     numberOfJumps = Number(numberOfJumps) + 1;
     localStorage.setItem("jumps", numberOfJumps);
-    clearInterval(playerAnimate);
-    playerAnimate = setInterval(() => {
+    clearInterval(window.playerAnimateInterval);
+    window.playerAnimateInterval = setInterval(() => {
       animate(player, runSprites);
     }, 75);
   }
 }
 
-const bg = [
-  new Bg(bgSprites[0], 0, 0.1),
-  new Bg(bgSprites[0], canvas.height * bgRatio, 0.1),
+// Initialize background arrays when sprites are ready
+function initializeBackgrounds() {
+  if (!bgSprites || bgSprites.length === 0 || !canvas || typeof bgRatio === 'undefined') {
+    console.log("Background sprites not ready, deferring background initialization");
+    return false;
+  }
+  
+  // Initialize bg array if not already done
+  if (!window.bg) {
+    window.bg = [
+      new Bg(bgSprites[0], 0, 0.1),
+      new Bg(bgSprites[0], canvas.height * bgRatio, 0.1),
 
-  new Bg(bgSprites[7], 0, 0.4),
-  new Bg(bgSprites[7], canvas.height * bgRatio, 0.4),
+      new Bg(bgSprites[7], 0, 0.4),
+      new Bg(bgSprites[7], canvas.height * bgRatio, 0.4),
 
-  new Bg(bgSprites[6], 0, 1.2),
-  new Bg(bgSprites[6], canvas.height * bgRatio, 1.2),
-];
+      new Bg(bgSprites[6], 0, 1.2),
+      new Bg(bgSprites[6], canvas.height * bgRatio, 1.2),
+    ];
+  }
+  
+  // Initialize fg array if not already done
+  if (!window.fg) {
+    window.fg = [
+      new Bg(fgSprites[0], 0, 0.3),
+      new Bg(fgSprites[0], canvas.height * bgRatio, 0.3),
+      new Bg(fgSprites[1], 0, 1),
+      new Bg(fgSprites[1], canvas.height * bgRatio, 1),
+    ];
+  }
+  
+  return true;
+}
 
-const fg = [
-  new Bg(fgSprites[0], 0, 0.3),
-  new Bg(fgSprites[0], canvas.height * bgRatio, 0.3),
-  new Bg(fgSprites[1], 0, 1),
-  new Bg(fgSprites[1], canvas.height * bgRatio, 1),
-];
+// Initialize game components after sprites are loaded
+function initializeGameComponents() {
+  console.log("Initializing game components...");
+  
+  // Initialize backgrounds
+  if (initializeBackgrounds()) {
+    console.log("Backgrounds initialized successfully");
+  }
+  
+  // Initialize player animation
+  if (initializePlayerAnimation()) {
+    console.log("Player animation initialized successfully");
+  }
+  
+  console.log("Game components initialization complete");
+}
+
+// Try to initialize backgrounds immediately, or defer if not ready
+if (typeof bgSprites !== 'undefined' && bgSprites.length > 0 && canvas && typeof bgRatio !== 'undefined') {
+  initializeBackgrounds();
+} else {
+  // Set up a retry mechanism
+  const retryBackgroundInit = () => {
+    if (initializeBackgrounds()) {
+      console.log("Backgrounds initialized successfully");
+    } else {
+      setTimeout(retryBackgroundInit, 100);
+    }
+  };
+  setTimeout(retryBackgroundInit, 100);
+}
 
 const CollectObjects = [new GameObject(CollectSprites[0], 0, 0, false)];
 
 function jumpBegin() {
   if (!player.slideing) {
-    clearInterval(playerAnimate);
-    playerAnimate = setInterval(() => {
+    clearInterval(window.playerAnimateInterval);
+    window.playerAnimateInterval = setInterval(() => {
       animate(player, jumpSprites);
     }, 100 + score / 10);
     jumping = true;
@@ -1265,12 +1381,12 @@ function slideBegin() {
     player.slideing = true;
     slideing += 1;
     if (slideing == 1) {
-      clearInterval(playerAnimate);
+      clearInterval(window.playerAnimateInterval);
       player.image = slideSprites[0];
       setTimeout(() => {
         player.image = slideSprites[1];
       }, 20);
-      playerAnimate = setInterval(() => {
+      window.playerAnimateInterval = setInterval(() => {
         player.image = slideSprites[2];
         animate(player, slideSprites.slice(3, 6));
       }, 100);
@@ -1281,13 +1397,13 @@ function slideBegin() {
 function slideEnd() {
   if (!jumping) {
     player.slideing = false;
-    clearInterval(playerAnimate);
+    clearInterval(window.playerAnimateInterval);
     slideing = 0;
     player.image = slideSprites[1];
     setTimeout(() => {
       player.image = slideSprites[0];
     }, 20);
-    playerAnimate = setInterval(() => {
+    window.playerAnimateInterval = setInterval(() => {
       animate(player, runSprites);
     }, 75);
     numberOfslides = Number(numberOfslides) + 1;
@@ -1433,6 +1549,17 @@ function Upgrade(boost) {
 function PlayButtonActivate() {
   console.log("PlayButtonActivate called");
   
+  // Check if all required components are ready
+  if (typeof GameObject === 'undefined') {
+    console.error("GameObject class not yet defined, cannot start game");
+    return;
+  }
+  
+  if (!window.canvas || !window.wrapperBlock) {
+    console.error("Canvas or wrapperBlock not ready, cannot start game");
+    return;
+  }
+  
   ResetGlobalVariables();
 
   document.addEventListener("keydown", keyRightHandler, false);
@@ -1458,16 +1585,31 @@ function PauseToggle() {
 function ResetGlobalVariables() {
   objects = [];
   coins = 0;
-  player.x = 0.2 * canvas.width;
+  
+  // Check if player object exists before setting its properties
+  if (player && canvas && wrapperBlock) {
+    player.x = 0.2 * canvas.width;
+    player.rise = false;
+    player.shield = false;
+    player.boostTimer = 0;
+    player.boost = false;
+    player.dead = false;
+    player.y = canvas.height - wrapperBlock.offsetHeight / 2.5;
+  } else {
+    console.error("Player object or canvas not ready for ResetGlobalVariables");
+    // Try to initialize player if it doesn't exist
+    if (!player && canvas && wrapperBlock) {
+      if (typeof GameObject !== 'undefined') {
+        initializePlayer();
+      } else {
+        console.error("GameObject class not yet defined, cannot initialize player");
+      }
+    }
+  }
+  
   gameOver = false;
   pause = false;
-  player.rise = false;
-  player.shield = false;
-  player.boostTimer = 0;
-  player.boost = false;
-  player.dead = false;
-  speed = canvas.clientWidth / 115;
-  player.y = canvas.height - wrapperBlock.offsetHeight / 2.5;
+  speed = canvas ? canvas.clientWidth / 115 : 0;
   score = 0;
   leftPressed = false;
   rightPressed = false;
@@ -1588,7 +1730,11 @@ function GoToHome() {
     }
   } catch (e) {}
 }
-function UpdateBg(index, arr = bg) {
+function UpdateBg(index, arr = window.bg) {
+  if (!arr || !arr[index] || !arr[index + 1]) {
+    console.log("Background array not ready for UpdateBg");
+    return;
+  }
   arr[index].Update(arr[index + 1]);
   arr[index + 1].Update(arr[index]);
 }
@@ -1652,8 +1798,14 @@ function Update() {
   if (elapsed > fpsInterval) {
     then = now - (elapsed % fpsInterval);
 
-    for (let i = 0; i < bg.length - 1; i += 2) {
-      UpdateBg(i);
+    // Check if bg array is ready before using it
+    if (window.bg && window.bg.length > 0) {
+      for (let i = 0; i < window.bg.length - 1; i += 2) {
+        UpdateBg(i);
+      }
+    } else {
+      // Try to initialize backgrounds if not ready
+      initializeBackgrounds();
     }
 
     if (RandomInteger(0, speed * 1.1) > speed) {
@@ -1915,8 +2067,8 @@ function Draw() {
   
   if (player.boost) {
     if (player.boostTimer == 0) {
-      clearInterval(playerAnimate);
-      playerAnimate = setInterval(() => {
+      clearInterval(window.playerAnimateInterval);
+      window.playerAnimateInterval = setInterval(() => {
         animate(player, runSprites);
       }, 30);
       player.boostTimer += 1;
@@ -1954,8 +2106,8 @@ function Draw() {
         CollectObjects[0].image = new Image();
         DrawObject(CollectObjects[0]);
         if (player.boost) {
-          clearInterval(playerAnimate);
-          playerAnimate = setInterval(() => {
+          clearInterval(window.playerAnimateInterval);
+          window.playerAnimateInterval = setInterval(() => {
             animate(player, runSprites);
           }, 75);
           player.boost = false;
@@ -2249,6 +2401,10 @@ function DrawObject(object) {
 }
 
 function Resize() {
+  if (!canvas || !wrapperBlock) {
+    console.log("Canvas or wrapperBlock not ready for Resize, skipping...");
+    return;
+  }
   canvas.width = wrapperBlock.offsetWidth;
   canvas.height = wrapperBlock.offsetHeight;
 }

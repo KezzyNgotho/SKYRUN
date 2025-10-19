@@ -10,7 +10,7 @@ class Particle {
     this.velocity = { x: 0, y: 0 };
     this.gravity = 0;
     this.fade = 0;
-    this.color = '#FFD700'; // Gold color for coins
+    this.color = window.particleManager?.themeColor || '#FFD700'; // Use theme color if available
     
     // Initialize based on type
     this.initParticle();
@@ -223,6 +223,12 @@ class ParticleManager {
   
   clear() {
     this.particles = [];
+  }
+  
+  setThemeColor(color) {
+    // Update the default color for new particles
+    this.themeColor = color;
+    console.log('Particle theme color set to:', color);
   }
 }
 

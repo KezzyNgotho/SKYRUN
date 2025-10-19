@@ -132,6 +132,10 @@ loader.addCompletionListener(() => {
     toggleHide(loaderBlock)
     toggleHide(controlBlock)
     bgRatio = bgSprites[0].naturalWidth / bgSprites[0].naturalHeight;
+    
+    // Initialize game components after sprites are loaded
+    initializeGameComponents();
+    
     gameInit()
   }) 
 })
