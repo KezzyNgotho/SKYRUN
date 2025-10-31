@@ -1,5 +1,5 @@
 {
-  "name": "coinquest",
+  "name": "skyrun",
   "description": "A revolutionary blockchain-powered arcade game built on Stacks",
   "version": "1.0.0",
   "type": "module",
@@ -47,11 +47,16 @@
     "docs:preview": "vitepress preview docs"
   },
   "dependencies": {
+    "@hashgraph/sdk": "^2.76.0",
     "@stacks/auth": "^7.2.0",
     "@stacks/connect": "^8.2.0",
     "@stacks/network": "^7.2.0",
     "@stacks/transactions": "^7.2.0",
+    "buffer": "^6.0.3",
+    "ethers": "^6.15.0",
+    "hashconnect": "^3.0.14",
     "lucide-react": "^0.546.0",
+    "process": "^0.11.10",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "sats-connect": "^4.1.1"
@@ -68,7 +73,8 @@
     "globals": "^16.4.0",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.45.0",
-    "vite": "npm:rolldown-vite@7.1.14"
+    "vite": "npm:rolldown-vite@7.1.14",
+    "vite-plugin-node-polyfills": "^0.21.0"
   },
   "overrides": {
     "vite": "npm:rolldown-vite@7.1.14"

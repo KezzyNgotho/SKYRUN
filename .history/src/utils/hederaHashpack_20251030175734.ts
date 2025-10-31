@@ -1,0 +1,315 @@
+import {
+  ContractExecuteTransaction,
+  ContractFunctionParameters,
+  ContractId,
+  Client,
+  Hbar,
+} from "@hashgraph/sdk";
+import { useHashpack } from "../contexts/HashpackContext";
+import { SKYRUN_ADDRESSES } from "./skyrun-contracts";
+import { ethers } from "ethers";
+
+/**
+ * Hardened SkyRun contract helpers
+ *
+ * - Writes: use Hashpack (sendTransaction) with Hedera ContractId (0.0.x) created from EVM address
+ * - Reads: use Mirror Node EVM /call endpoint (requires EVM address, not 0.0.x).
+ *          We include retries / indexing wait and robust decoding with ethers ABI.
+ *
+ * NOTE:
+ * - This module assumes useHashpack() provides `sendTransaction(tx)` (which accepts ContractExecuteTransaction).
+ * - Mirror Node indexing can take 20-120s after deployment — reads handle that gracefully.
+ */
+
+export function useHederaContract() {
+  const { accountId, connected } = useHashpack();
+  if (!connected || !accountId) {
+    return { client: null, accountId: null };
+  }
+
+  // Client for testnet (no operator set; we use wallet for signing when needed)
+  const client = Client.forTestnet();
+  client.setMaxQueryPayment(new Hbar(1)); // default max for any SDK queries you might call
+  return { client, accountId };
+}
+
+/**
+ * Convert EVM address string -> Hedera ContractId (0.0.x).
+ * Useful for building ContractExecuteTransaction objects for HashPack signing.
+ */
+export function evmToContractId(evmAddress: string): ContractId {
+  // ContractId.fromEvmAddress expects (shard, realm, evmAddress)
+  return ContractId.fromEvmAddress(0, 0, evmAddress);
+}
+
+/**
+ * Small helper: convert Hedera accountId (0.0.x or shard.realm.num) to solidity address (0x...)
+ */
+async function accountIdToEvmAddress(accountId: string) {
+  // uses AccountId.fromString(...).toSolidityAddress()
+  const { AccountId: AccountIdClass } = await import("@hashgraph/sdk");
+  try {
+    return AccountIdClass.fromString(accountId).toSolidityAddress();
+  } catch (err) {
+    console.warn("Failed converting accountId to evm address:", accountId, err);
+    throw err;
+  }
+}
+
+/**
+ * Mirror Node EVM /call wrapper with retry/indexing wait.
+ * - contractEvmAddress: e.g. "0x3D04...".
+ * - data: hex string "0x..."
+ * - fromEvmAddress: caller (solidity) address used as msg.sender
+ * Returns parsed JSON from mirror node on success or throws.
+ */
+async function mirrorNodeCallWithRetry(
+  contractEvmAddress: string,
+  data: string,
+  fromEvmAddress: string,
+  timeoutMs = 90_000, // total wait time before giving up
+  pollIntervalMs = 2500
+) {
+  const endpoint = `https://testnet.mirrornode.hedera.com/api/v1/contracts/${contractEvmAddress}/call`;
+
+  const start = Date.now();
+  let lastError: Error | null = null;
+
+  while (Date.now() - start < timeoutMs) {
+    try {
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ data, estimate: false, from: fromEvmAddress }),
+      });
+
+      if (response.status === 404) {
+        // Contract not found yet (likely not indexed). Retry until timeout.
+        lastError = new Error("Mirror node returned 404 (contract not indexed on testnet yet)");
+        // Wait and retry
+        await new Promise((r) => setTimeout(r, pollIntervalMs));
+        continue;
+      }
+
+      // For other non-ok statuses just surface the error
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`Mirror node /call error ${response.status}: ${text}`);
+      }
+
+      const json = await response.json();
+      return json;
+    } catch (err) {
+      lastError = err instanceof Error ? err : new Error(String(err));
+      // For network errors or other intermittent issues, wait and retry
+      await new Promise((r) => setTimeout(r, pollIntervalMs));
+      continue;
+    }
+  }
+
+  // After timeout:
+  throw lastError ?? new Error("Mirror node call failed (timeout)");
+}
+
+/**
+ * Use your Hashpack context's sendTransaction to submit ContractExecuteTransaction
+ * This wrapper logs and normalizes responses
+ */
+export function useSkyRunActions() {
+  const { client, accountId } = useHederaContract();
+  const { sendTransaction } = useHashpack(); // expects tx: ContractExecuteTransaction
+
+  async function submitScore(score: number) {
+    if (!client || !accountId) throw new Error("Wallet not connected");
+
+    const integerScore = Math.floor(Math.abs(score));
+    if (!Number.isFinite(integerScore) || integerScore < 0) {
+      throw new Error(`Invalid score value: ${score}. Must be a non-negative number.`);
+    }
+
+    console.log("📤 Submitting score:", integerScore, "for account:", accountId);
+
+    const contractId = evmToContractId(SKYRUN_ADDRESSES.game);
+
+    const tx = new ContractExecuteTransaction()
+      .setContractId(contractId)
+      .setGas(400_000)
+      .setFunction("submitGameScore", new ContractFunctionParameters().addUint256(integerScore))
+      .setPayableAmount(new Hbar(0));
+
+    return await sendTransaction(tx);
+  }
+
+  async function claimReward(questId: number) {
+    if (!client || !accountId) throw new Error("Wallet not connected");
+
+    const integerQuestId = Math.floor(Math.abs(questId));
+    if (!Number.isFinite(integerQuestId) || integerQuestId < 0) {
+      throw new Error(`Invalid quest ID: ${questId}. Must be a non-negative integer.`);
+    }
+
+    console.log("🎁 Claiming reward for quest:", integerQuestId, "for account:", accountId);
+
+    const contractId = evmToContractId(SKYRUN_ADDRESSES.game);
+
+    const tx = new ContractExecuteTransaction()
+      .setContractId(contractId)
+      .setGas(300_000)
+      .setFunction("claimQuestReward", new ContractFunctionParameters().addUint256(integerQuestId));
+
+    return await sendTransaction(tx);
+  }
+
+  async function buyLifeLine() {
+    if (!client || !accountId) throw new Error("Wallet not connected");
+
+    console.log("💰 Buying lifeline for account:", accountId);
+
+    const contractId = evmToContractId(SKYRUN_ADDRESSES.game);
+    
+    const tx = new ContractExecuteTransaction()
+      .setContractId(contractId)
+      .setGas(250_000)
+      .setFunction("buyLifeline"); // no params
+
+    return await sendTransaction(tx);
+  }
+
+  async function useLifeLine() {
+    if (!client || !accountId) throw new Error("Wallet not connected");
+
+    console.log("🎮 Using lifeline for account:", accountId);
+
+    const contractId = evmToContractId(SKYRUN_ADDRESSES.game);
+
+    const tx = new ContractExecuteTransaction()
+      .setContractId(contractId)
+      .setGas(100_000)
+      .setFunction("useLifeline");
+
+    return await sendTransaction(tx);
+  }
+
+  /**
+   * READ: getAvailableLives
+   * - Uses Hedera SDK ContractCallQuery for immediate results (works even on newly deployed contracts)
+   * - Falls back to Mirror Node if SDK query fails
+   */
+  async function getAvailableLives(): Promise<number> {
+    if (!accountId) return 0;
+
+    try {
+      // NOTE: Contract uses msg.sender pattern, so we MUST use Mirror Node /call
+      // SDK ContractCallQuery doesn't support msg.sender for view functions
+      const evmAddress = await accountIdToEvmAddress(accountId);
+      const contractEvmAddress = SKYRUN_ADDRESSES.game;
+      const iface = new ethers.Interface(["function getAvailableLives() view returns (uint256)"]);
+      const data = iface.encodeFunctionData("getAvailableLives", []);
+
+      // Shorter timeout for newly deployed contracts (won't retry on 404)
+      const json = await mirrorNodeCallWithRetry(contractEvmAddress, data, evmAddress, 5000, 2000);
+      const hex = json.result ?? json.callResult ?? json.data ?? json.output;
+      if (!hex) return 0;
+      
+      const decoded = iface.decodeFunctionResult("getAvailableLives", hex);
+      const value = Number(decoded[0]);
+      console.log('✅ Got available lives:', value);
+      return value;
+    } catch {
+      // Contract not indexed yet or other error - return 0 silently
+      return 0;
+    }
+  }
+
+  /**
+   * READ: getTokenBalance
+   * - Uses Hedera SDK ContractCallQuery for immediate results
+   * - Falls back to Mirror Node if SDK query fails
+   */
+  async function getTokenBalance(): Promise<number> {
+    if (!accountId) return 0;
+
+    try {
+      // NOTE: Contract uses msg.sender pattern, so we MUST use Mirror Node /call
+      const evmAddress = await accountIdToEvmAddress(accountId);
+      const contractEvmAddress = SKYRUN_ADDRESSES.game;
+      const iface = new ethers.Interface(["function getTokenBalance() view returns (uint256)"]);
+      const data = iface.encodeFunctionData("getTokenBalance", []);
+
+      const json = await mirrorNodeCallWithRetry(contractEvmAddress, data, evmAddress, 5000, 2000);
+      const hex = json.result ?? json.callResult ?? json.data ?? json.output;
+      if (!hex) return 0;
+      
+      const decoded = iface.decodeFunctionResult("getTokenBalance", hex);
+      const value = Number(decoded[0]);
+      console.log('✅ Got token balance:', value);
+      return value;
+    } catch {
+      // Contract not indexed yet - return 0 silently
+      return 0;
+    }
+  }
+
+  /**
+   * READ: getUserStats
+   * - Uses Hedera SDK ContractCallQuery for immediate results
+   * - Falls back to Mirror Node if SDK query fails
+   */
+  async function getUserStats() {
+    const defaultStats = {
+      totalGamesPlayed: 0,
+      totalScore: 0,
+      highScore: 0,
+      tokensEarned: 0,
+      level: 0,
+      lifelinesPurchased: 0,
+      availableLives: 0,
+    };
+
+    if (!accountId) return defaultStats;
+
+    try {
+      // NOTE: Contract uses msg.sender pattern, so we MUST use Mirror Node /call
+      const evmAddress = await accountIdToEvmAddress(accountId);
+      const iface = new ethers.Interface([
+        "function getUserStats() view returns (uint256 totalGamesPlayed, uint256 totalScore, uint256 highScore, uint256 tokensEarned, uint256 level, uint256 lifelinesPurchased, uint256 availableLives)",
+      ]);
+      const data = iface.encodeFunctionData("getUserStats", []);
+      const contractEvmAddress = SKYRUN_ADDRESSES.game;
+
+      const json = await mirrorNodeCallWithRetry(contractEvmAddress, data, evmAddress, 5000, 2000);
+      const hex = json.result ?? json.callResult ?? json.data ?? json.output;
+      
+      if (!hex) return defaultStats;
+
+      const decoded = iface.decodeFunctionResult("getUserStats", hex);
+      const stats = {
+        totalGamesPlayed: Number(decoded[0]),
+        totalScore: Number(decoded[1]),
+        highScore: Number(decoded[2]),
+        tokensEarned: Number(decoded[3]),
+        level: Number(decoded[4]),
+        lifelinesPurchased: Number(decoded[5]),
+        availableLives: Number(decoded[6]),
+      };
+
+      console.log("📊 Fetched user stats:", stats);
+      return stats;
+    } catch {
+      // Contract not indexed yet - return defaults silently
+      return defaultStats;
+    }
+  }
+
+  return {
+    submitScore,
+    claimReward,
+    buyLifeLine,
+    useLifeLine,
+    getAvailableLives,
+    getTokenBalance,
+    getUserStats,
+  };
+}
+
+export default useSkyRunActions;

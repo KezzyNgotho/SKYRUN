@@ -65,6 +65,38 @@ const addCoins = () => {
 }
 
 const saveMe = () => {
+  // Check if lives are available
+  if (typeof window.livesRemaining !== 'undefined' && window.livesRemaining <= 0) {
+    console.log("🚫 No lives remaining!");
+    alert("❌ No more lives remaining! You can buy up to 5 lives per game.");
+    return;
+  }
+  
+  // Use life if available
+  if (typeof window.livesRemaining !== 'undefined' && window.livesRemaining > 0) {
+    if (typeof window.livesUsedThisGame !== 'undefined') {
+      window.livesUsedThisGame++;
+      window.livesRemaining--;
+      localStorage.setItem("livesUsedThisGame", window.livesUsedThisGame);
+    }
+    
+    // Update UI to show remaining lives
+    if (typeof window.updateLifeDisplay === 'function') {
+      window.updateLifeDisplay();
+    }
+    
+    console.log(`💊 Life used! Remaining lives: ${window.livesRemaining}`);
+    
+    // Disable the save me button if no lives left
+    if (window.livesRemaining <= 0) {
+      const saveButton = document.getElementById("saveButton");
+      if (saveButton) {
+        saveButton.disabled = true; // Disable instead of hiding
+      }
+      console.log("🚫 No more lives remaining!");
+    }
+  }
+  
   player.rise = true;
   gameOver = false;
   stopGame = false;

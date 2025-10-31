@@ -2,7 +2,7 @@
 <html lang="en">
 
   <head>
-  <title>coinQuest</title>
+  <title>SkyRun</title>
   <link rel="stylesheet" href="/style.css">
   <meta name="viewport" content="width = device-width, height = device-height">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -37,16 +37,40 @@
 <body oncontextmenu="return false;">
   <div id="turnLandscape">
     rotate your device
-    <img style='margin-top: 30px' id='rotateIcon' src="/assets/gui/orientation.png" alt="">
+    <img id='rotateIcon' src="/assets/gui/orientation.png" alt="">
   </div>
   <main>
 
     <div class="wrapper screenRatio">
+      <div class="wallet-status">
+        <div class="wallet-status-indicator disconnected" id="walletStatusIndicator"></div>
+        <div class="wallet-status-text" id="walletStatusText">Disconnected</div>
+      </div>
+      
+      <div class="wallet-address" id="walletAddress">
+        <div class="wallet-address-text" id="walletAddressText"></div>
+      </div>
+      
+      <div class="transaction-feedback" id="transactionFeedback">
+        <div class="transaction-feedback-text" id="transactionFeedbackText"></div>
+        <div class="transaction-feedback-details" id="transactionFeedbackDetails"></div>
+      </div>
+      
       <div class="loader">
+        <div class="loader-logo">
+          <img src="/assets/gui/coinquest.png" alt="SkyRun">
+        </div>
+        <div class="loader-text">Loading SkyRun<span class="loader-dots">...</span></div>
+        <div class="loader-progress">
+          <div class="loader-progress-bar" id="loaderProgressBar"></div>
+        </div>
+        <div class="loader-percentage" id="loaderPercentage">0%</div>
+        <div class="loader-status" id="loaderStatus">Initializing game assets...</div>
+        <div class="loader-spinner">
         <div></div>
         <div></div>
         <div></div>
-        <div></div>
+        </div>
       </div>
       <div class="controlBlock hide">
         Controls
@@ -63,6 +87,22 @@
       <div class="coins hide">
         <div class="coinsText"></div>
         <img src="/assets/sprites/collect/coin.png" alt="">
+      </div>
+      
+      <!-- Game Stats Display -->
+      <div class="gameStats hide">
+        <div class="statItem">
+          <span class="statLabel">Score:</span>
+          <span class="statValue" id="gameScore">0</span>
+        </div>
+        <div class="statItem">
+          <span class="statLabel">Coins:</span>
+          <span class="statValue" id="gameCoins">0</span>
+        </div>
+        <div class="statItem">
+          <span class="statLabel">Lives:</span>
+          <span class="statValue" id="gameLives">3</span>
+        </div>
       </div>
 
       <div class="leftButtonsBlock hide">
@@ -122,7 +162,7 @@
         <img class='replayButton button' src="/assets/gui/Redo.png" alt="" onclick="Replay(); if(window.clickSound) clickSound.play()">
       </div>
     </div>
-    <div class="mainMenu mainBg hide screenRatio">
+    <div class="mainMenu mainBg screenRatio">
       <div class="mainMenuSide">
         <ul class="circles">
           <li></li>
@@ -137,34 +177,77 @@
           <li></li>
         </ul>
         <div class='mainTitle'>
-         coinQuest
+         SkyRun
         </div>
+
+        <!-- Wallet Connect Button -->
+        <button class='connectButton walletDisconnected' onclick="if(typeof window.connectWallet === 'function') { window.connectWallet(); } else { console.log('Wallet not ready yet'); }">
+          <img src="/assets/gui/achives.png" alt=""> 
+          <span class="walletText">Connect Wallet</span>
+        </button>
 
         <div class="mainMenuButtons">
-
-          <div class='menuButton' 
-          onclick="PlayButtonActivate(); if(window.clickSound) clickSound.play(); if(window.bgMusic) bgMusic.play(); ">
+          <!-- Primary Game Actions -->
+          <div class='menuButton playButton' 
+          onclick="startGame()">
             <img src="/assets/gui/Play.png" alt="">
-            play
+            <span>Play</span>
           </div>
           
-          <div id="walletArea" class="walletArea">
-            <div class='connectButton walletDisconnected' onclick="if(typeof window.connectWallet === 'function') { window.connectWallet(); } else { console.log('Wallet not ready yet'); }">
+          <!-- Secondary Menu Options -->
+          <div class='menuButton achievementsButton' 
+          onclick="toggleHide(achivesBlock); if(window.clickSound) clickSound.play()">
               <img src="/assets/gui/achives.png" alt=""> 
-              <span class="walletText">Connect Wallet</span>
-              <span class="connectHint">(Stacks wallet required)</span>
+            <span>Achievements</span>
+          </div>
+          
+          <div class='menuButton storeButton' 
+          onclick="toggleHide(storeBlock); if(window.clickSound) clickSound.play()">
+            <img src="/assets/gui/store.png" alt="">
+            <span>Store</span>
             </div>
+          
+          <div class='menuButton settingsButton' 
+          onclick="toggleHide(settingsPanel); if(window.clickSound) clickSound.play()">
+            <img src="/assets/gui/settings.png" alt="">
+            <span>Settings</span>
           </div>
           
         </div>
+        <!-- Enhanced Stats Section -->
         <div class="mainLeftInfo">
-          <div class="mainLeftWrapper">
+          <div class="statsContainer">
+            <div class="statCard highScoreCard">
             <img id='prizeImg' src="/assets/gui/prize.png" alt="Prize icon">
+              <div class="statContent">
+                <div class="statLabel">High Score</div>
             <div class='HighScoreBlock mainStatText'></div>
           </div>
-          <div class="mainLeftWrapper">
+            </div>
+            
+            <div class="statCard coinsCard">
             <img id='coinImg' src="/assets/sprites/collect/coin.png" alt="Coin icon">
+              <div class="statContent">
+                <div class="statLabel">Total Coins</div>
             <div class='mainCoinsText mainStatText'></div>
+              </div>
+            </div>
+            
+            <div class="statCard gamesPlayedCard">
+              <img src="/assets/gui/games-played.png" alt="Games Played icon">
+              <div class="statContent">
+                <div class="statLabel">Games Played</div>
+                <div class='gamesPlayedText mainStatText'>0</div>
+              </div>
+            </div>
+            
+            <div class="statCard levelCard">
+              <img src="/assets/gui/level.png" alt="Level icon">
+              <div class="statContent">
+                <div class="statLabel">Level</div>
+                <div class='levelText mainStatText'>1</div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -178,42 +261,54 @@
       </div>
     </div>
     <div class="tutorial  hide"></div>
-    <div class="settingsPanel insideScreenRatio hide">
-      <div class="panelContainer">
-        <div class="settingsHeader">
-          <h2 class="settingsTitle">⚙️ Game Settings</h2>
-          <p class="settingsSubtitle">Customize your gaming experience</p>
+    <div class="settingsPanel mainBg screenRatio hide">
+      <div class="statsHolder">
+        <div class="stat">Audio: Enabled</div>
+        <div class='stat'>Graphics: High</div>
+        <div class='stat'>Controls: WASD</div>
+      </div>
+      <div class="settingsHolder">
+        <div class="settingBlock">
+          <img class='settingImg' src="/assets/gui/soundOn.png" alt="">
+          <div class='settingText'>
+            <p>Audio Settings</p>
+            Master Volume: 80%
+          </div>
+          <div class="settingControl">
+            <input type="range" id="masterVolume" min="0" max="100" value="80" class="volumeSlider">
+            <button class='settingBtn' onclick="mutePage(); if(window.clickSound) clickSound.play()">Toggle Mute</button>
+          </div>
         </div>
         
-        <div class="settingsContent">
-          <div class="settingsGrid">
-            <div class="settingCard audioCard">
-              <div class="settingIcon">🔊</div>
-              <div class="settingInfo">
-                <h3>Audio Settings</h3>
-                <p>Control game sounds and music</p>
-                <div class="settingStatus">
-                  <span class="statusIcon">🎵</span>
-                  <span class="statusText">Audio enabled</span>
+        <div class="settingBlock">
+          <img class='settingImg' src="/assets/gui/achives.png" alt="">
+          <div class='settingText'>
+            <p>Graphics Settings</p>
+            Visual Effects: High Quality
                 </div>
-              </div>
-              <div class="settingControl">
-                <button class='settingBtn audioBtn' onclick="mutePage(); if(window.clickSound) clickSound.play()">
-                  <span class="btnIcon">🔊</span>
-                  <span class="btnText">Toggle Mute</span>
-                </button>
+          <div class="settingControl">
+            <div class="toggleRow">
+              <span>Particles</span>
+              <div class="toggleSwitch">
+                <input type="checkbox" id="particlesToggle" checked>
+                <span class="slider"></span>
               </div>
             </div>
-            
-            <div class="settingCard controlsCard">
-              <div class="settingIcon">🎮</div>
-              <div class="settingInfo">
-                <h3>Game Controls</h3>
-                <p>Use these keys to control your character</p>
-                <div class="settingStatus">
-                  <span class="statusIcon">⌨️</span>
-                  <span class="statusText">WASD or Arrow Keys</span>
+            <div class="toggleRow">
+              <span>Screen Shake</span>
+              <div class="toggleSwitch">
+                <input type="checkbox" id="screenShakeToggle" checked>
+                <span class="slider"></span>
+              </div>
+            </div>
                 </div>
+        </div>
+        
+        <div class="settingBlock">
+          <img class='settingImg' src="/assets/gui/left.png" alt="">
+          <div class='settingText'>
+            <p>Game Controls</p>
+            WASD + Arrow Keys
               </div>
               <div class="settingControl">
                 <div class="controlsDisplay">
@@ -222,78 +317,181 @@
                   <span class="controlKey">S</span>
                   <span class="controlKey">D</span>
                 </div>
+            <div class="toggleRow">
+              <span>Mobile Controls</span>
+              <div class="toggleSwitch">
+                <input type="checkbox" id="mobileControlsToggle" checked>
+                <span class="slider"></span>
+              </div>
+            </div>
               </div>
             </div>
             
-            <div class="settingCard walletCard">
-              <div class="settingIcon">💼</div>
-              <div class="settingInfo">
-                <h3>Wallet Connection</h3>
-                <p>Connect your wallet to earn rewards</p>
-                <div class="settingStatus">
-                  <span class="statusIcon">🔗</span>
-                  <span class="statusText" id="walletStatusText">Checking connection...</span>
+        <div class="settingBlock">
+          <img class='settingImg' src="/assets/gui/wallet.png" alt="">
+          <div class='settingText'>
+            <p>Wallet Connection</p>
+            Blockchain Integration
+          </div>
+          <div class="settingControl">
+            <div id="walletStatus" class="walletStatus">Not Connected</div>
+            <button class='settingBtn' onclick="if(typeof window.connectWallet === 'function') { window.connectWallet(); } else { console.log('Wallet not ready yet'); }">Connect Wallet</button>
                 </div>
+        </div>
+        
+        <div class="settingBlock">
+          <img class='settingImg' src="/assets/gui/wallet.png" alt="">
+          <div class='settingText'>
+            <p>Wallet Management</p>
+            Blockchain connection
               </div>
               <div class="settingControl">
                 <div id="walletStatus" class="walletStatus">Not Connected</div>
-                <button class='settingBtn walletBtn' onclick="openWalletSettings(); if(window.clickSound) clickSound.play()">
-                  <span class="btnIcon">⚙️</span>
-                  <span class="btnText">Manage</span>
-                </button>
+            <button class='settingBtn' onclick="if(typeof window.connectWallet === 'function') { window.connectWallet(); } else { console.log('Wallet not ready yet'); }">Connect Wallet</button>
+            <button class='settingBtn' onclick="disconnectWallet(); if(window.clickSound) clickSound.play()">Disconnect</button>
+          </div>
+        </div>
+        
+        <div class="settingBlock">
+          <img class='settingImg' src="/assets/gui/settings.png" alt="">
+          <div class='settingText'>
+            <p>Game Preferences</p>
+            Auto-save & Tutorials
+          </div>
+          <div class="settingControl">
+            <div class="toggleRow">
+              <span>Auto-Save</span>
+              <div class="toggleSwitch">
+                <input type="checkbox" id="autoSaveToggle" checked>
+                <span class="slider"></span>
+              </div>
+            </div>
+            <div class="toggleRow">
+              <span>Tutorial</span>
+              <div class="toggleSwitch">
+                <input type="checkbox" id="tutorialToggle" checked>
+                <span class="slider"></span>
               </div>
             </div>
           </div>
         </div>
         
-        <div class="return-btn-holder">
-          <button class='btn return-btn' onclick="toggleHide(settingsPanel); if(window.clickSound) clickSound.play()">
-            ← Back to Game
-          </button>
+        <div class="settingBlock">
+          <img class='settingImg' src="/assets/gui/achives.png" alt="">
+          <div class='settingText'>
+            <p>Performance</p>
+            Frame Rate & Quality
+          </div>
+          <div class="settingControl">
+            <select class="settingSelect" id="frameRateSelect">
+              <option value="30">30 FPS</option>
+              <option value="60" selected>60 FPS</option>
+              <option value="120">120 FPS</option>
+            </select>
+            <select class="settingSelect" id="qualitySelect">
+              <option value="low">Low Quality</option>
+              <option value="medium">Medium Quality</option>
+              <option value="high" selected>High Quality</option>
+            </select>
+          </div>
         </div>
+        
+        <div class="settingBlock">
+          <img class='settingImg' src="/assets/gui/success.png" alt="">
+          <div class='settingText'>
+            <p>Reset Settings</p>
+            Restore to defaults
+          </div>
+          <div class="settingControl">
+            <button class='settingBtn resetBtn' onclick="resetSettings(); if(window.clickSound) clickSound.play()">Reset All</button>
+            <button class='settingBtn saveBtn' onclick="saveSettings(); if(window.clickSound) clickSound.play()">Save Settings</button>
+          </div>
+        </div>
+      </div>
+      
+      <div class="return-btn-holder">
+        <button class='btn return-btn' onclick="toggleHide(settingsPanel); if(window.clickSound) clickSound.play()">
+          ← Back to Menu
+        </button>
       </div>
     </div>
     <div class="rewards mainBg screenRatio hide">
-      <div class="panelContainer">
-        <div class="rewardsHeader">
-          <h2 class="rewardsTitle">🏆 Rewards Center</h2>
-          <p class="rewardsSubtitle">Claim your earned rewards from the last game run</p>
+      <div class="statsHolder">
+        <div class="stat">Last Score: <span id="lastScoreText">0</span></div>
+        <div class='stat'>Coins Earned: <span id="lastCoinsText">0</span></div>
+        <div class='stat'>Status: Ready to Claim</div>
+      </div>
+      <div class="rewardsHolder">
+        <div class="rewardBlock">
+          <img class='rewardImg' src="/assets/sprites/collect/coin.png" alt="">
+          <div class='rewardText'>
+            <p>Coins Earned</p>
+            Last run collection
+          </div>
+          <div class="rewardControl">
+            <div class="rewardValue" id="coinsValue">0 coins</div>
+            <div class="rewardStatus">Ready to claim</div>
+          </div>
         </div>
         
-        <div class="rewardsContent">
-          <div class="rewardsGrid">
-            <div class="rewardCard coinsCard">
-              <div class="rewardIcon">🪙</div>
-              <div class="rewardInfo">
-                <h3>Coins Earned</h3>
-                <div class="rewardValue" id="lastCoinsText">0</div>
-                <p class="rewardDescription">Coins collected in last run</p>
+        <div class="rewardBlock">
+          <img class='rewardImg' src="/assets/gui/achives.png" alt="">
+          <div class='rewardText'>
+            <p>Score Achieved</p>
+            Final game score
+          </div>
+          <div class="rewardControl">
+            <div class="rewardValue" id="scoreValue">0 points</div>
+            <div class="rewardStatus">Ready to claim</div>
               </div>
             </div>
             
-            <div class="rewardCard scoreCard">
-              <div class="rewardIcon">⭐</div>
-              <div class="rewardInfo">
-                <h3>Score Achieved</h3>
-                <div class="rewardValue" id="lastScoreText">0</div>
-                <p class="rewardDescription">Final score from last run</p>
+        <div class="rewardBlock">
+          <img class='rewardImg' src="/assets/gui/wallet.png" alt="">
+          <div class='rewardText'>
+            <p>Wallet Connection</p>
+            Blockchain integration
+          </div>
+          <div class="rewardControl">
+            <div id="walletRewardStatus" class="walletRewardStatus">Not Connected</div>
+            <button class='rewardBtn' onclick="if(typeof window.connectWallet === 'function') { window.connectWallet(); } else { console.log('Wallet not ready yet'); }">Connect Wallet</button>
               </div>
+        </div>
+        
+        <div class="rewardBlock">
+          <img class='rewardImg' src="/assets/gui/success.png" alt="">
+          <div class='rewardText'>
+            <p>Claim Rewards</p>
+            Send to wallet address
+          </div>
+          <div class="rewardControl">
+            <button class='rewardBtn claimBtn' id="claimLastRunBtn" onclick="claimLastRun(); if(window.clickSound) clickSound.play()">Claim All Rewards</button>
+            <div class="claimInfo">Requires wallet connection</div>
             </div>
           </div>
           
-          <div class="claimSection">
-            <div class="claimInfo">
-              <h3>Ready to Claim?</h3>
-              <p>Your rewards will be sent to your connected wallet address</p>
+        <div class="rewardBlock">
+          <img class='rewardImg' src="/assets/gui/achives.png" alt="">
+          <div class='rewardText'>
+            <p>Transaction History</p>
+            View past claims
             </div>
-            <button class='claimBtn' id="claimLastRunBtn" onclick="claimLastRun(); if(window.clickSound) clickSound.play()">
-              <span class="claimIcon">💰</span>
-              <span class="claimText">Claim Rewards</span>
-            </button>
-            <div class="walletRequirement">
-              <span class="requirementIcon">💼</span>
-              <span class="requirementText">Wallet must be connected to claim rewards</span>
-            </div>
+          <div class="rewardControl">
+            <button class='rewardBtn historyBtn' onclick="viewTransactionHistory(); if(window.clickSound) clickSound.play()">View History</button>
+            <div class="historyInfo">Track your rewards</div>
+          </div>
+        </div>
+        
+        <div class="rewardBlock">
+          <img class='rewardImg' src="/assets/gui/settings.png" alt="">
+          <div class='rewardText'>
+            <p>Reward Settings</p>
+            Configure preferences
+          </div>
+          <div class="rewardControl">
+            <button class='rewardBtn settingsBtn' onclick="openRewardSettings(); if(window.clickSound) clickSound.play()">Settings</button>
+            <div class="settingsInfo">Auto-claim options</div>
+          </div>
           </div>
         </div>
         
@@ -301,7 +499,6 @@
           <button class='btn return-btn' onclick="toggleHide(rewardsBlock); if(window.clickSound) clickSound.play()">
             ← Back to Game
           </button>
-        </div>
       </div>
     </div>
     <div class="achives mainBg screenRatio hide">
@@ -311,22 +508,31 @@
         <div class='stat' id="numberOfslidesBlock"></div>
       </div>
       <div class="achivesHolder">
-        <div class="achiveBlock lock"><img class='achiveImg' src="/assets/gui/pioneer.png" alt="">
+        <div class="achiveBlock lock" data-achievement="pioneer"><img class='achiveImg' src="/assets/gui/pioneer.png" alt="">
           <div class='achiveText'>
             <p>Pioneer</p>
-            Score 100 points
+            Run 1000 meters
+            <div class="progressBar">
+              <div class="progressFill" data-progress="pioneer"></div>
+            </div>
           </div>
         </div>
-        <div class="achiveBlock lock"><img class='achiveImg' src="/assets/gui/bomb.png" alt="">
+        <div class="achiveBlock lock" data-achievement="bomb"><img class='achiveImg' src="/assets/gui/bomb.png" alt="">
           <div class='achiveText'>
-            <p>Extreme</p>
-            Score 300 points
+            <p>Bomb Runner</p>
+            Run 5000 meters
+            <div class="progressBar">
+              <div class="progressFill" data-progress="bomb"></div>
+            </div>
           </div>
         </div>
-        <div class="achiveBlock lock"><img class='achiveImg' src="/assets/gui/motorbike.png" alt="">
+        <div class="achiveBlock lock" data-achievement="motorbike"><img class='achiveImg' src="/assets/gui/motorbike.png" alt="">
           <div class='achiveText'>
-            <p>Racer</p>
-            Score 500 points
+            <p>Speed Demon</p>
+            Run 10000 meters
+            <div class="progressBar">
+              <div class="progressFill" data-progress="motorbike"></div>
+            </div>
           </div>
         </div>
         <div class="achiveBlock lock"><img class='achiveImg' src="/assets/gui/trees.png" alt="">
@@ -484,6 +690,14 @@
         return false;
       }
       
+      // Handle StacksProvider conflicts
+      if (e.message.includes('StacksProvider') && e.message.includes('Cannot redefine property')) {
+        console.warn('🔧 Stacks wallet extension conflict detected:', e.message);
+        console.warn('💡 This is caused by multiple Stacks wallet extensions. Your game should still work normally.');
+        e.preventDefault();
+        return false;
+      }
+      
       // Handle other external script conflicts
       if (e.filename && (e.filename.includes('extension') || e.filename.includes('content_script'))) {
         console.warn('🔧 Browser extension script error:', e.message);
@@ -512,6 +726,10 @@
           console.warn('🔧 Filtered external script error:', message);
           return;
         }
+        if (message.includes('StacksProvider') && message.includes('Cannot redefine property')) {
+          console.warn('🔧 Filtered Stacks wallet extension conflict:', message);
+          return;
+        }
         originalConsoleError.apply(console, args);
       };
       
@@ -528,8 +746,8 @@
     // User-friendly notification about browser extensions
     setTimeout(() => {
       if (window.location.protocol === 'file:' || window.location.hostname === 'localhost') {
-        console.log('🎮 CoinQuest Game Loaded Successfully!');
-        console.log('💡 If you see any "observer" errors above, they are from browser extensions and won\'t affect your game.');
+        console.log('🎮 SkyRun Loaded Successfully!');
+        console.log('💡 If you see any "observer" or "StacksProvider" errors above, they are from browser extensions and won\'t affect your game.');
         console.log('🔧 To disable these errors, try running the game in incognito mode or disable browser extensions.');
       }
     }, 2000);
@@ -544,8 +762,13 @@
   <script src="/scripts/screenShake.js"></script>
   <script src="/scripts/powerUps.js"></script>
   <script src="/scripts/dynamicBackgrounds.js"></script>
+  <script src="/scripts/soundEffects.js"></script>
   <script src="/scripts/game.js"></script> <!-- Re-enabled for button functionality -->
   <script src="/scripts/walletBridge.js"></script>
+  <script src="/scripts/uiEnhancements.js"></script>
+  <script src="/scripts/achievements.js"></script>
+  <script src="/scripts/difficulty.js"></script>
+  <script src="/scripts/effects.js"></script>
 
   <!-- React bundle -->
     <div id="root"></div>
