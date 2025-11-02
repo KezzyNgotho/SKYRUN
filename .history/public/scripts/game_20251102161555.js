@@ -1350,7 +1350,7 @@ async function buyLifeLine() {
 			console.log('🎮 Using in-game coins for lifeline.');
 			try { payForLife(); } catch(e) { console.log('payForLife not available'); }
 		}
-	} catch(e) { console.log('Hedera buyLife error', e); }
+	} catch(e) { console.log('Stacks buyLife error', e); }
 	document.getElementById("saveButton").disabled = false;
 	updateLifeDisplay(); // Use the new display function
 	return;

@@ -162,11 +162,8 @@ window.addEventListener('DOMContentLoaded', function() {
     return Promise.resolve();
   };
 
-  // Legacy Stacks function name for backwards compatibility
-  window.callStacksClaim = window.callHederaClaim;
-
-  window.callHederaBuyLife = async function(fnArgs) {
-    console.log('callHederaBuyLife called with:', fnArgs);
+  window.callStacksBuyLife = async function(fnArgs) {
+    console.log('callStacksBuyLife called with:', fnArgs);
     
     // Check if wallet is connected
     const walletStatus = window.getWalletStatus();
@@ -232,9 +229,6 @@ window.addEventListener('DOMContentLoaded', function() {
     console.warn('React wallet functions not available, using fallback');
     return Promise.resolve();
   };
-
-  // Legacy Stacks function name for backwards compatibility
-  window.callStacksBuyLife = window.callHederaBuyLife;
 
   // Sync blockchain stats to UI
   window.syncBlockchainStats = async function() {
@@ -408,7 +402,7 @@ window.addEventListener('DOMContentLoaded', function() {
     
     if (status.connected) {
       console.log(`✅ Wallet Connected: ${status.address}`);
-      console.log(`💰 Balance: ${status.balance} HBAR`);
+      console.log(`💰 Balance: ${status.balance} STX`);
     } else {
       console.log('❌ Wallet Not Connected');
     }

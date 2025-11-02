@@ -233,9 +233,6 @@ window.addEventListener('DOMContentLoaded', function() {
     return Promise.resolve();
   };
 
-  // Legacy Stacks function name for backwards compatibility
-  window.callStacksBuyLife = window.callHederaBuyLife;
-
   // Sync blockchain stats to UI
   window.syncBlockchainStats = async function() {
     console.log('🔄 Syncing blockchain stats to UI...');
@@ -408,7 +405,7 @@ window.addEventListener('DOMContentLoaded', function() {
     
     if (status.connected) {
       console.log(`✅ Wallet Connected: ${status.address}`);
-      console.log(`💰 Balance: ${status.balance} HBAR`);
+      console.log(`💰 Balance: ${status.balance} STX`);
     } else {
       console.log('❌ Wallet Not Connected');
     }

@@ -727,7 +727,7 @@
           return;
         }
         if (message.includes('StacksProvider') && message.includes('Cannot redefine property')) {
-          console.warn('🔧 Filtered wallet extension conflict (legacy):', message);
+          console.warn('🔧 Filtered Stacks wallet extension conflict:', message);
           return;
         }
         originalConsoleError.apply(console, args);

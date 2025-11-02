@@ -1334,15 +1334,14 @@ async function buyLifeLine() {
   document.getElementById("SaveMebuttonText").innerText = "Loading...";
 
 	try {
-		// If lifeline maps to a Hedera function, call here; else fallback to in-game coins
-		if (typeof window.callHederaBuyLife === 'function' || typeof window.callStacksBuyLife === 'function') {
-			const buyLifeFn = window.callHederaBuyLife || window.callStacksBuyLife;
-			console.log('🎮 callHederaBuyLife/callStacksBuyLife function found, calling...');
-			await buyLifeFn([]);
-			console.log('🎮 Lifeline purchased on Hedera successfully.');
+		// If lifeline maps to a Stacks function, call here; else fallback to in-game coins
+		if (typeof window.callStacksBuyLife === 'function') {
+			console.log('🎮 callStacksBuyLife function found, calling...');
+			await window.callStacksBuyLife([]);
+			console.log('🎮 Lifeline purchased on Stacks successfully.');
 			
 			// Show success message
-			alert(`🎉 SUCCESS! Lifeline purchased!\n\n💊 Extra life added to your game!\n💰 Cost: 10 tokens\n\n🎮 Your lifeline has been recorded on the Hedera blockchain!\n\n💊 Lives remaining: ${window.livesRemaining - 1}`);
+			alert(`🎉 SUCCESS! Lifeline purchased!\n\n💊 Extra life added to your game!\n💰 Cost: 10 COINQ tokens\n\n🎮 Your lifeline has been recorded on the blockchain!\n\n💊 Lives remaining: ${window.livesRemaining - 1}`);
 			
 			coinSound.play();
 			saveMe();
@@ -1350,7 +1349,7 @@ async function buyLifeLine() {
 			console.log('🎮 Using in-game coins for lifeline.');
 			try { payForLife(); } catch(e) { console.log('payForLife not available'); }
 		}
-	} catch(e) { console.log('Hedera buyLife error', e); }
+	} catch(e) { console.log('Stacks buyLife error', e); }
 	document.getElementById("saveButton").disabled = false;
 	updateLifeDisplay(); // Use the new display function
 	return;

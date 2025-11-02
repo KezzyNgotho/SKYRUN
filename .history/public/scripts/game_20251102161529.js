@@ -1233,33 +1233,32 @@ async function finalizeGameScore() {
 	try {
 			// Ensure we only pass the most basic, serializable values
 			const scoreValue = parseInt(score.toFixed(0), 10); // Convert to integer
-			console.log('🎮 Submitting score to Hedera blockchain:', scoreValue, typeof scoreValue);
+			console.log('🎮 Submitting score to Stacks:', scoreValue, typeof scoreValue);
 			
 			// Try to avoid serialization issues by using a different approach
-		if (typeof window.callHederaFinalize === 'function' || typeof window.callStacksFinalize === 'function') {
-				const finalizeFn = window.callHederaFinalize || window.callStacksFinalize;
-				console.log('🎮 callHederaFinalize/callStacksFinalize function found, calling...');
+		if (typeof window.callStacksFinalize === 'function') {
+				console.log('🎮 callStacksFinalize function found, calling...');
 				// Store the score in a global variable to avoid passing it directly
 				window.currentGameScore = scoreValue;
 				
 				// Call the function without parameters to avoid serialization
-				await finalizeFn();
-				console.log('🎮 Submitted score to Hedera successfully.');
+				await window.callStacksFinalize();
+				console.log('🎮 Submitted score to Stacks successfully.');
 				
 				// Show success message
-				alert(`🎉 SUCCESS! Score submitted to blockchain!\n\n📊 Your score: ${scoreValue} points\n💰 Tokens earned for your achievement!\n\n🎮 Your progress has been saved on the Hedera blockchain!`);
+				alert(`🎉 SUCCESS! Score submitted to blockchain!\n\n📊 Your score: ${scoreValue} points\n💰 Tokens earned for your achievement!\n\n🎮 Your progress has been saved on the Stacks blockchain!`);
 			} else {
 				console.warn('🎮 callStacksFinalize function not available');
 				alert('❌ Blockchain function not available. Please refresh the page.');
 			}
 		} catch (e) { 
-			console.log('🎮 Hedera finalize error', e); 
+			console.log('🎮 Stacks finalize error', e); 
 			alert(`❌ Failed to submit score: ${e.message}`);
 		} finally {
     document.getElementById("endGameButton").disabled = false;
     document.getElementById("endGamebuttonText").innerText = "END GAME";
 		}
-  // Using Hedera EVM smart contracts
+  // EVM path removed; using Stacks only
 }
 // Claim last run rewards via MetaMask contract
 async function claimLastRun() {
@@ -1273,24 +1272,23 @@ async function claimLastRun() {
 			console.log('Claiming quest reward:', questId, typeof questId);
 			
 			// Try to avoid serialization issues by using a different approach
-			if (typeof window.callHederaClaim === 'function' || typeof window.callStacksClaim === 'function') {
-				const claimFn = window.callHederaClaim || window.callStacksClaim;
-				console.log('🎮 callHederaClaim/callStacksClaim function found, calling...');
+			if (typeof window.callStacksClaim === 'function') {
+				console.log('🎮 callStacksClaim function found, calling...');
 				// Store the quest ID in a global variable to avoid passing it directly
 				window.currentQuestId = questId;
 				
 				// Call the function without parameters to avoid serialization
-				await claimFn();
-				console.log('🎮 Claimed via Hedera successfully.');
+				await window.callStacksClaim();
+				console.log('🎮 Claimed via Stacks successfully.');
 				
 				// Show success message
-				alert(`🎉 SUCCESS! Quest reward claimed!\n\n🏆 Quest ID: ${questId}\n💰 Reward tokens added to your balance!\n\n🎮 Your achievement has been recorded on the Hedera blockchain!`);
+				alert(`🎉 SUCCESS! Quest reward claimed!\n\n🏆 Quest ID: ${questId}\n💰 Reward tokens added to your balance!\n\n🎮 Your achievement has been recorded on the blockchain!`);
 			} else {
 				console.warn('🎮 callStacksClaim function not available');
 				alert('❌ Blockchain function not available. Please refresh the page.');
 			}
 		} catch(e) { 
-			console.log('Hedera claim error', e); 
+			console.log('Stacks claim error', e); 
 			throw e; // Re-throw to handle in outer catch
 		}
 		return;
@@ -1334,15 +1332,14 @@ async function buyLifeLine() {
   document.getElementById("SaveMebuttonText").innerText = "Loading...";
 
 	try {
-		// If lifeline maps to a Hedera function, call here; else fallback to in-game coins
-		if (typeof window.callHederaBuyLife === 'function' || typeof window.callStacksBuyLife === 'function') {
-			const buyLifeFn = window.callHederaBuyLife || window.callStacksBuyLife;
-			console.log('🎮 callHederaBuyLife/callStacksBuyLife function found, calling...');
-			await buyLifeFn([]);
-			console.log('🎮 Lifeline purchased on Hedera successfully.');
+		// If lifeline maps to a Stacks function, call here; else fallback to in-game coins
+		if (typeof window.callStacksBuyLife === 'function') {
+			console.log('🎮 callStacksBuyLife function found, calling...');
+			await window.callStacksBuyLife([]);
+			console.log('🎮 Lifeline purchased on Stacks successfully.');
 			
 			// Show success message
-			alert(`🎉 SUCCESS! Lifeline purchased!\n\n💊 Extra life added to your game!\n💰 Cost: 10 tokens\n\n🎮 Your lifeline has been recorded on the Hedera blockchain!\n\n💊 Lives remaining: ${window.livesRemaining - 1}`);
+			alert(`🎉 SUCCESS! Lifeline purchased!\n\n💊 Extra life added to your game!\n💰 Cost: 10 COINQ tokens\n\n🎮 Your lifeline has been recorded on the blockchain!\n\n💊 Lives remaining: ${window.livesRemaining - 1}`);
 			
 			coinSound.play();
 			saveMe();
@@ -1350,7 +1347,7 @@ async function buyLifeLine() {
 			console.log('🎮 Using in-game coins for lifeline.');
 			try { payForLife(); } catch(e) { console.log('payForLife not available'); }
 		}
-	} catch(e) { console.log('Hedera buyLife error', e); }
+	} catch(e) { console.log('Stacks buyLife error', e); }
 	document.getElementById("saveButton").disabled = false;
 	updateLifeDisplay(); // Use the new display function
 	return;

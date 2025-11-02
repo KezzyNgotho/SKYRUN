@@ -408,7 +408,7 @@ window.addEventListener('DOMContentLoaded', function() {
     
     if (status.connected) {
       console.log(`✅ Wallet Connected: ${status.address}`);
-      console.log(`💰 Balance: ${status.balance} HBAR`);
+      console.log(`💰 Balance: ${status.balance} STX`);
     } else {
       console.log('❌ Wallet Not Connected');
     }
